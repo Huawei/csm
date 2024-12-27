@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: prometheus-ssl
+  namespace: huawei-csm
+data:
+  tls.crt: <base64-encoded-certificate>
+  tls.key: <base64-encoded-private-key>

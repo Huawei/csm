@@ -1,0 +1,148 @@
+# Default values for huawei-csm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+##################################Follows are REQUIRED##################################
+# all global values across charts go here
+global:
+  # the number of replicas of the pod.
+  # if the replicaCount greater than 1, then the function of leader election will be enabled.
+  replicaCount: 1
+  imageRepo: <IMAGE_REPO_PATH>
+  logging:
+    module: file
+    level: info
+    fileSize: 20M
+    maxBackups: 9
+  # leaderElection configuration
+  leaderElection:
+    leaseDuration: "8s"
+    renewDeadline: "6s"
+    retryPeriod: "2s"
+  # csiDriverName: the csi driver name
+  # Default value: "csi.huawei.com"
+  csiDriverName: "csi.huawei.com"
+  # Allowed values:
+  #   true: prefer to schedule pods with different services to different nodes
+  #   false: use the default pod scheduling policy of Kubernetes
+  # Default value: true
+  # This field will be inactive when it conflicts with the nodeSelector.
+  balancedDeploy: true
+
+# all supported features
+features:
+  # prometheusCollector: allowed prometheus use the storage to collect metrics
+  prometheusCollector:
+    # Allowed values:
+    #   true: enable prometheus collect feature
+    #   false: disable prometheus collect feature
+    # Default value: true
+    enabled: true
+    # nodePort: port the containers are provided to the prometheus
+    # Default value: 30074
+    nodePort: 30074
+    # prometheusCollectorSSL: parameters required to start https
+    prometheusCollectorSSL:
+      # Allowed values:
+      #   true: enable https, when set it certPath and keyPath must set
+      #   false: disable https, use http
+      # Default value: true
+      enabled: true
+      # The Path of cert, need to be placed in the huawei-csm directory
+      certPath: ""
+      # The Path of key, need to be placed in the huawei-csm directory
+      keyPath: ""
+    # nodeSelector: Define node selection constraints for prometheusCollector pods.
+    # For the pod to be eligible to run on a node, the node must have each
+    # of the indicated key-value pairs as labels.
+    # Leave as blank to consider all nodes
+    # Allowed values: map of key-value pairs
+    # Default value: None
+    nodeSelector:
+    # Uncomment if you wish the service scheduled to the node with Specific Labels
+    #  kubernetes.io/hostname: ""
+
+  # storageTopo: allow to provision pv/pod to storage.
+  storageTopo:
+    # Allowed values:
+    #   true: enable prometheus collect feature
+    #   false: disable prometheus collect feature
+    # Default value: true
+    enabled: true
+    # rtRetryInterval: the max delay for retrying a rt task
+    # Default value: "5m"
+    rtRetryMaxDelay: "5m"
+    # pvRetryIntervalMax: the max delay for retrying a pv task
+    # Default value: "1m"
+    pvRetryMaxDelay: "1m"
+    # podRetryInterval: the max delay for retrying a pod task
+    # Default value: "1m"
+    podRetryMaxDelay: "1m"
+    # resyncPeriod: the interval for refreshing the resourceTopologies on the cluster
+    # Default value: "15m"
+    resyncPeriod: "15m"
+    # nodeSelector: Define node selection constraints for storageTopo pods.
+    # For the pod to be eligible to run on a node, the node must have each
+    # of the indicated key-value pairs as labels.
+    # Leave as blank to consider all nodes
+    # Allowed values: map of key-value pairs
+    # Default value: None
+    nodeSelector:
+    # Uncomment if you wish the service scheduled to the node with Specific Labels
+    #  kubernetes.io/hostname: ""
+
+cluster:
+  name: "kubernetes"
+
+images:
+  prometheusCollector: csm-prometheus-collector:{{version}}
+  topoService: csm-topo-service:{{version}}
+  containerMonitorInterface: csm-cmi:{{version}}
+  livenessProbe: csm-liveness-probe:{{version}}
+
+# limits and requests of containers
+containerResourcesSet:
+  prometheusService:
+    livenessProbe:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    prometheusCollector:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+    cmiController:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+  storageService:
+    livenessProbe:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    cmiController:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi
+    topoService:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 300m
+        memory: 512Mi

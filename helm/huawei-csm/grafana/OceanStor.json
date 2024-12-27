@@ -1,0 +1,4619 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": 20,
+  "iteration": 1695864698601,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 92,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "qaalCSjVz"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 3,
+            "x": 0,
+            "y": 1
+          },
+          "id": 108,
+          "options": {
+            "content": "<img style=\"display: block;-webkit-user-select: none;margin: auto;cursor: zoom-out;background-color: hsl(0, 0%, 90%);transition: background-color 300ms;\" src=\"https://avatars.githubusercontent.com/u/20315766?s=200&v=4\" width=\"100%\" height=\"100%\">",
+            "mode": "html"
+          },
+          "pluginVersion": "7.5.4",
+          "type": "text"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-YlBl"
+              },
+              "custom": {
+                "align": "center",
+                "displayMode": "color-text",
+                "filterable": false
+              },
+              "mappings": [
+                {
+                  "from": "",
+                  "id": 1,
+                  "text": "Device Type",
+                  "to": "",
+                  "type": 1,
+                  "value": "model"
+                },
+                {
+                  "from": "",
+                  "id": 2,
+                  "text": "Serial Number",
+                  "to": "",
+                  "type": 1,
+                  "value": "sn"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 9,
+            "x": 3,
+            "y": 1
+          },
+          "id": 98,
+          "maxPerRow": 2,
+          "options": {
+            "footer": {
+              "enablePagination": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": false,
+            "sortBy": []
+          },
+          "pluginVersion": "7.5.4",
+          "repeat": null,
+          "repeatDirection": "h",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_array_basic_info{endpoint=~\"$StorageName\"}",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "intervalFactor": 1,
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "$StorageName Device Information",
+          "transformations": [
+            {
+              "id": "labelsToFields",
+              "options": {}
+            },
+            {
+              "id": "filterFieldsByName",
+              "options": {
+                "include": {
+                  "names": [
+                    "model",
+                    "sn"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "reduce",
+              "options": {
+                "includeTimeField": false,
+                "mode": "seriesToRows",
+                "reducers": [
+                  "last"
+                ]
+              }
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "from": "",
+                  "id": 1,
+                  "text": "NORMAL",
+                  "to": "",
+                  "type": 1,
+                  "value": "1"
+                },
+                {
+                  "from": "",
+                  "id": 2,
+                  "text": "UNKNOWN",
+                  "to": "",
+                  "type": 1,
+                  "value": "0"
+                },
+                {
+                  "from": "",
+                  "id": 3,
+                  "text": "FAULTY",
+                  "to": "",
+                  "type": 1,
+                  "value": "2"
+                },
+                {
+                  "from": "",
+                  "id": 4,
+                  "text": "INCONSISTENT",
+                  "to": "",
+                  "type": 1,
+                  "value": "9"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Running Status"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "from": "",
+                        "id": 1,
+                        "text": "UNKNOWN",
+                        "to": "",
+                        "type": 1,
+                        "value": "0"
+                      },
+                      {
+                        "from": "",
+                        "id": 2,
+                        "text": "NORMAL",
+                        "to": "",
+                        "type": 1,
+                        "value": "1"
+                      },
+                      {
+                        "from": "",
+                        "id": 3,
+                        "text": "RUNNING",
+                        "to": "",
+                        "type": 1,
+                        "value": "2"
+                      },
+                      {
+                        "from": "",
+                        "id": 4,
+                        "text": "ONLINE",
+                        "to": "",
+                        "type": 1,
+                        "value": "27"
+                      },
+                      {
+                        "from": "",
+                        "id": 5,
+                        "text": "OFFLINE",
+                        "to": "",
+                        "type": 1,
+                        "value": "28"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 12,
+            "y": 1
+          },
+          "id": 100,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 26
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_array_health_status{endpoint=~\"$StorageName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Health Status",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_array_running_status{endpoint=~\"$StorageName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Running Status",
+              "refId": "D"
+            }
+          ],
+          "title": "$StorageName  Device status",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                {
+                  "from": "",
+                  "id": 1,
+                  "text": "NORMAL",
+                  "to": "",
+                  "type": 1,
+                  "value": "1"
+                },
+                {
+                  "from": "",
+                  "id": 2,
+                  "text": "UNKNOWN",
+                  "to": "",
+                  "type": 1,
+                  "value": "0"
+                },
+                {
+                  "from": "",
+                  "id": 3,
+                  "text": "FAULTY",
+                  "to": "",
+                  "type": 1,
+                  "value": "2"
+                },
+                {
+                  "from": "",
+                  "id": 4,
+                  "text": "INCONSISTENT",
+                  "to": "",
+                  "type": 1,
+                  "value": "9"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Running Status"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "from": "",
+                        "id": 1,
+                        "text": "UNKNOWN",
+                        "to": "",
+                        "type": 1,
+                        "value": "0"
+                      },
+                      {
+                        "from": "",
+                        "id": 2,
+                        "text": "NORMAL",
+                        "to": "",
+                        "type": 1,
+                        "value": "1"
+                      },
+                      {
+                        "from": "",
+                        "id": 3,
+                        "text": "RUNNING",
+                        "to": "",
+                        "type": 1,
+                        "value": "2"
+                      },
+                      {
+                        "from": "",
+                        "id": 4,
+                        "text": "ONLINE",
+                        "to": "",
+                        "type": 1,
+                        "value": "27"
+                      },
+                      {
+                        "from": "",
+                        "id": 5,
+                        "text": "OFFLINE",
+                        "to": "",
+                        "type": 1,
+                        "value": "28"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 18,
+            "y": 1
+          },
+          "id": 122,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 26
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_health_status{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Health Status",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_running_status{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Running Status",
+              "refId": "D"
+            }
+          ],
+          "title": "$ControllerName  Controller Status",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 0,
+            "y": 6
+          },
+          "id": 110,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "titleSize": 4,
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DataSource}"
+              },
+              "editorMode": "builder",
+              "expr": "huawei_storage_controller_total_iops{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": true,
+              "legendFormat": "__auto",
+              "queryType": "randomWalk",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_total_iops{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/Os of controller $ControllerName",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 3,
+            "y": 6
+          },
+          "id": 112,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_total_bandwidth{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of controller $ControllerName",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd",
+                "seriesBy": "last"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 6,
+            "y": 6
+          },
+          "id": 114,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_avg_io_response_time{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
+            }
+          ],
+          "title": "Average I/O response time of controller $ControllerName",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "B"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "max",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 9,
+            "y": 6
+          },
+          "id": 54,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {
+              "valueSize": 35
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_memory_usage{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Memory usage",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_cpu_usage{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "CPU usage",
+              "refId": "D"
+            }
+          ],
+          "title": "Resource usage of controller $ControllerName",
+          "type": "bargauge"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 15,
+            "y": 6
+          },
+          "id": 116,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storagepool_total_bandwidth{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of storage pool $Pool",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd",
+                "seriesBy": "last"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 18,
+            "y": 6
+          },
+          "id": 118,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storagepool_avg_io_response_time{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Average I/O response time of storage pool $Pool",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 200,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byFrameRefID",
+                  "options": "A"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "continuous-YlBl"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 3,
+            "x": 21,
+            "y": 6
+          },
+          "id": 120,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "valueSize": 50
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storagepool_total_iops{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Total number of I/Os in storage pool $Pool",
+          "type": "stat"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "id": 106,
+          "options": {
+            "displayMode": "basic",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sort_desc(topk($FileSystemNum, huawei_storage_filesystem_capacity_usage{endpoint=~\"$StorageName\", name=~\".*\"}))",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "B"
+            }
+          ],
+          "title": "Top $FileSystemNum File System Capacity Usage of Storage Pool $Pool ",
+          "transformations": [],
+          "type": "bargauge"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "continuous-GrYlRd"
+              },
+              "mappings": [],
+              "max": 100,
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "id": 104,
+          "options": {
+            "displayMode": "basic",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sort_desc(topk($LunNum, huawei_storage_lun_capacity_usage{endpoint=~\"$StorageName\", name=~\".*\"}))",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "B"
+            }
+          ],
+          "title": "Top $LunNum Storage Pool $Pool Lun Capacity Usage Top",
+          "transformations": [],
+          "type": "bargauge"
+        }
+      ],
+      "title": "StorageDevice",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 30,
+      "panels": [
+        {
+          "cards": {
+            "cardPadding": null,
+            "cardRound": null
+          },
+          "color": {
+            "cardColor": "#b4ff00",
+            "colorScale": "sqrt",
+            "colorScheme": "interpolateSpectral",
+            "exponent": 0.5,
+            "mode": "spectrum"
+          },
+          "dataFormat": "timeseries",
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 0,
+            "y": 2
+          },
+          "heatmap": {},
+          "hideZeroBuckets": false,
+          "highlightCards": true,
+          "id": 68,
+          "legend": {
+            "show": false
+          },
+          "options": {
+            "calculate": true,
+            "calculation": {
+              "xBuckets": {
+                "mode": "size",
+                "value": "5m"
+              },
+              "yBuckets": {
+                "mode": "size",
+                "scale": {
+                  "type": "linear"
+                },
+                "value": "10"
+              }
+            },
+            "cellGap": 1,
+            "cellValues": {},
+            "color": {
+              "exponent": 0.5,
+              "fill": "dark-orange",
+              "mode": "scheme",
+              "scale": "exponential",
+              "scheme": "RdYlBu",
+              "steps": 128
+            },
+            "exemplars": {
+              "color": "rgba(255,0,255,0.7)"
+            },
+            "filterValues": {
+              "le": 1e-9
+            },
+            "legend": {
+              "show": true
+            },
+            "rowsFrame": {
+              "layout": "auto"
+            },
+            "tooltip": {
+              "show": true,
+              "yHistogram": false
+            },
+            "yAxis": {
+              "axisPlacement": "left",
+              "max": "100",
+              "min": 0,
+              "reverse": false
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "reverseYBuckets": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_memory_usage{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "B"
+            }
+          ],
+          "title": "Memory usage of controller $ControllerName",
+          "tooltip": {
+            "show": true,
+            "showHistogram": false
+          },
+          "type": "heatmap",
+          "xAxis": {
+            "show": true
+          },
+          "xBucketNumber": null,
+          "xBucketSize": "5m",
+          "yAxis": {
+            "decimals": null,
+            "format": "short",
+            "logBase": 1,
+            "max": "100",
+            "min": "0",
+            "show": true,
+            "splitFactor": null
+          },
+          "yBucketBound": "auto",
+          "yBucketNumber": null,
+          "yBucketSize": 10
+        },
+        {
+          "cards": {
+            "cardPadding": null,
+            "cardRound": null
+          },
+          "color": {
+            "cardColor": "#b4ff00",
+            "colorScale": "sqrt",
+            "colorScheme": "interpolateSpectral",
+            "exponent": 0.5,
+            "mode": "spectrum"
+          },
+          "dataFormat": "timeseries",
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 12,
+            "y": 2
+          },
+          "heatmap": {},
+          "hideZeroBuckets": false,
+          "highlightCards": true,
+          "id": 62,
+          "legend": {
+            "show": false
+          },
+          "options": {
+            "calculate": true,
+            "calculation": {
+              "xBuckets": {
+                "mode": "size",
+                "value": "5m"
+              },
+              "yBuckets": {
+                "mode": "size",
+                "scale": {
+                  "type": "linear"
+                },
+                "value": "10"
+              }
+            },
+            "cellGap": 1,
+            "cellValues": {},
+            "color": {
+              "exponent": 0.5,
+              "fill": "dark-orange",
+              "mode": "scheme",
+              "scale": "exponential",
+              "scheme": "RdYlBu",
+              "steps": 128
+            },
+            "exemplars": {
+              "color": "rgba(255,0,255,0.7)"
+            },
+            "filterValues": {
+              "le": 1e-9
+            },
+            "legend": {
+              "show": true
+            },
+            "rowsFrame": {
+              "layout": "auto"
+            },
+            "tooltip": {
+              "show": true,
+              "yHistogram": false
+            },
+            "yAxis": {
+              "axisPlacement": "left",
+              "max": "100",
+              "min": 0,
+              "reverse": false
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "reverseYBuckets": false,
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_cpu_usage{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "",
+              "refId": "B"
+            }
+          ],
+          "title": "CPU usage of controller $ControllerName",
+          "tooltip": {
+            "show": true,
+            "showHistogram": false
+          },
+          "type": "heatmap",
+          "xAxis": {
+            "show": true
+          },
+          "xBucketNumber": null,
+          "xBucketSize": "5m",
+          "yAxis": {
+            "decimals": null,
+            "format": "short",
+            "logBase": 1,
+            "max": "100",
+            "min": "0",
+            "show": true,
+            "splitFactor": null
+          },
+          "yBucketBound": "auto",
+          "yBucketNumber": null,
+          "yBucketSize": 10
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 0,
+            "y": 8
+          },
+          "id": 64,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_total_iops{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/Os of controller $ControllerName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 8,
+            "y": 8
+          },
+          "id": 44,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_read_iops{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Number of read I/Os of controller $ControllerName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 8,
+            "x": 16,
+            "y": 8
+          },
+          "id": 46,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_write_iops{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Number of write I/Os of controller $ControllerName ",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 15
+          },
+          "id": 66,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_total_bandwidth{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of controller $ControllerName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 15
+          },
+          "id": 50,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_read_bandwidth{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Read bandwidth rate of controller $ControllerName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 15
+          },
+          "id": 52,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_write_bandwidth{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$ControllerName",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Write bandwidth rate of controller $ControllerName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 23
+          },
+          "id": 42,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_controller_avg_io_response_time{endpoint=~\"$StorageName\", name=~\"$ControllerName\"}",
+              "hide": false,
+              "instant": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average I/O response time of controller $ControllerName",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Controller",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 18,
+      "panels": [
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [],
+              "mappings": [],
+              "noValue": "Capacity allocation of multiple storage pools cannot be displayed together.",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "FileSystem"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Lun"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 4,
+            "x": 0,
+            "y": 3
+          },
+          "id": 34,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\", name=~\".*\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Lun",
+              "refId": "D"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"}) - sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "E"
+            },
+            {
+              "exemplar": true,
+              "expr": "sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=~\".*\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "FileSystem",
+              "refId": "F"
+            }
+          ],
+          "title": "Capacity allocation of storage pool $Pool",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "decimals": 0,
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 4,
+            "y": 3
+          },
+          "id": 24,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "topk($LunNum, huawei_storage_lun_capacity{endpoint=~\"$StorageName\", name=~\".*\"})",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"})",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "D"
+            }
+          ],
+          "title": "Capacity allocation of LUNs in storage pool $Pool",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "decimals": 0,
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 12,
+            "y": 3
+          },
+          "id": 32,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true,
+              "values": [
+                "value"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "topk($FileSystemNum, huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=~\".*\"})",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\"})",
+              "hide": false,
+              "instant": true,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "D"
+            }
+          ],
+          "title": "Capacity allocation of File System in storage pool $Pool",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [],
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "空闲"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "已使用"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Used"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "semi-dark-yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 4,
+            "x": 20,
+            "y": 3
+          },
+          "id": 36,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storage_pool_free_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "C"
+            },
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storage_pool_used_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Used",
+              "refId": "D"
+            }
+          ],
+          "title": "Capacity usage of storage pool $Pool",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 11
+          },
+          "id": 4,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storagepool_total_bandwidth{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "$Pool",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of storage pool $Pool",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 11
+          },
+          "id": 6,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_storagepool_avg_io_response_time{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "B"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average I/O response time of storage pool $Pool",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 19
+          },
+          "id": 38,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DataSource}"
+              },
+              "editorMode": "builder",
+              "expr": "huawei_storage_storagepool_total_iops{endpoint=~\"$StorageName\", name=~\"$Pool\"}",
+              "hide": false,
+              "legendFormat": "$Pool",
+              "queryType": "randomWalk",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DataSource}"
+              },
+              "hide": false,
+              "queryType": "randomWalk",
+              "refId": "C"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total number of I/Os in storage pool $Pool",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Pool",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "id": 12,
+      "panels": [
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "links": [],
+              "mappings": [],
+              "noValue": "Capacity usage of multiple LUNs cannot be displayed together.",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "空闲"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "已使用"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 4
+          },
+          "id": 78,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_lun_capacity{endpoint=~\"$StorageName\", name=\"$LunName\"} - (huawei_storage_lun_capacity_usage{endpoint=~\"$StorageName\", name=\"$LunName\"} / 100 * huawei_storage_lun_capacity{endpoint=~\"$StorageName\", name=\"$LunName\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "(huawei_storage_lun_capacity_usage{endpoint=~\"$StorageName\", name=\"$LunName\"} / 100) * huawei_storage_lun_capacity{endpoint=~\"$StorageName\", name=\"$LunName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Used",
+              "refId": "B"
+            }
+          ],
+          "title": "Capacity usage of LUN $LunName",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 18,
+            "x": 6,
+            "y": 4
+          },
+          "id": 124,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_lun_avg_io_response_time{endpoint=~\"$StorageName\", name=~\"$LunName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average I/O response time of LUN $LunName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 11,
+            "x": 0,
+            "y": 12
+          },
+          "id": 74,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_lun_total_iops{endpoint=~\"$StorageName\", name=~\"$LunName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/O quantity of LUN $LunName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 13,
+            "x": 11,
+            "y": 12
+          },
+          "id": 76,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_lun_total_bandwidth{endpoint=~\"$StorageName\", name=~\"$LunName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of LUN $LunName",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Lun",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 10,
+      "panels": [
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "Capacity allocation of multiple file system cannot be displayed together.",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 5
+          },
+          "id": 80,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$FileSystemName\"} - (huawei_storage_filesystem_capacity_usage{endpoint=~\"$StorageName\", name=\"$FileSystemName\"} / 100 * huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$FileSystemName\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "(huawei_storage_filesystem_capacity_usage{endpoint=~\"$StorageName\", name=\"$FileSystemName\"} / 100) * huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$FileSystemName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Used",
+              "refId": "B"
+            }
+          ],
+          "title": "Capacity usage of file system $FileSystemName",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 18,
+            "x": 6,
+            "y": 5
+          },
+          "id": 84,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_filesystem_ops{endpoint=~\"$StorageName\", name=~\"$FileSystemName\"}",
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/O quantity of file system $FileSystemName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 11,
+            "x": 0,
+            "y": 13
+          },
+          "id": 82,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_filesystem_avg_read_ops_response_time{endpoint=~\"$StorageName\", name=~\"$FileSystemName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average read I/O response time of file system $FileSystemName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 13,
+            "x": 11,
+            "y": 13
+          },
+          "id": 86,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_filesystem_avg_write_ops_response_time{endpoint=~\"$StorageName\", name=~\"$FileSystemName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average write I/O response time of file system $FileSystemName",
+          "type": "timeseries"
+        }
+      ],
+      "title": "FileSystem",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 128,
+      "panels": [
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "Capacity allocation of multiple file system cannot be displayed together.",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 6
+          },
+          "id": 126,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\"}\r",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Used",
+              "refId": "B"
+            }
+          ],
+          "title": "Capacity usage of PV $PVName",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 18,
+            "x": 6,
+            "y": 6
+          },
+          "id": 136,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_lun_pv_lun_total_iops{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/O quantity of file system $FileSystemName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": [
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "pvc-17201a4a-a4b9-4259-ab2f-92999a6ca00b"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "graph": true,
+                      "legend": false,
+                      "tooltip": false
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 11,
+            "x": 0,
+            "y": 14
+          },
+          "id": 138,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_lun_avg_io_response_time{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average I/O response time of PV $PVName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "MiBs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 13,
+            "x": 11,
+            "y": 14
+          },
+          "id": 140,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_lun_total_bandwidth{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total bandwidth rate of PV $PVName",
+          "type": "timeseries"
+        }
+      ],
+      "title": "PV-Lun",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 142,
+      "panels": [
+        {
+          "datasource": "${DataSource}",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "Capacity allocation of multiple file system cannot be displayed together.",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Free"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 6,
+            "x": 0,
+            "y": 7
+          },
+          "id": 144,
+          "links": [],
+          "options": {
+            "displayLabels": [],
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true,
+              "values": [
+                "value"
+              ],
+              "width": 1
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.1.0",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\"})",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Free",
+              "refId": "A"
+            },
+            {
+              "exemplar": true,
+              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\"}\r",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "Used",
+              "refId": "B"
+            }
+          ],
+          "title": "Capacity usage of PV $PVName",
+          "type": "piechart"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "iops"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 18,
+            "x": 6,
+            "y": 7
+          },
+          "id": 130,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_filesystem_ops{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Total I/O quantity of PV $PVName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 11,
+            "x": 0,
+            "y": 15
+          },
+          "id": 132,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_filesystem_avg_read_ops_response_time{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average read I/O response time of PV $PVName",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "${DataSource}",
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 26,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "graph": false,
+                  "legend": false,
+                  "tooltip": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 3,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "never",
+                "spanNulls": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "µs"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 13,
+            "x": 11,
+            "y": 15
+          },
+          "id": 134,
+          "options": {
+            "graph": {},
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            },
+            "tooltipOptions": {
+              "mode": "single"
+            }
+          },
+          "pluginVersion": "7.5.4",
+          "targets": [
+            {
+              "exemplar": true,
+              "expr": "huawei_storage_pv_filesystem_avg_write_ops_response_time{backend=~\"$StorageName\",pv_name=~\"$PVName\"}",
+              "hide": false,
+              "interval": "",
+              "legendFormat": "{{pv_name}}",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": null,
+          "timeShift": null,
+          "title": "Average write I/O response time of PV $PVName",
+          "type": "timeseries"
+        }
+      ],
+      "title": "PV-FIleSystem",
+      "type": "row"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "primary",
+          "value": "primary"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "DataSource",
+        "multi": false,
+        "name": "DataSource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "dorado-iscsi-138",
+          "value": "dorado-iscsi-138"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_storage_pool_used_capacity{endpoint=~\".*\"},endpoint)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Storage Device",
+        "multi": false,
+        "name": "StorageName",
+        "options": [],
+        "query": {
+          "query": "label_values(huawei_storage_storage_pool_used_capacity{endpoint=~\".*\"},endpoint)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "A",
+          "value": "A"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_controller_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Controller",
+        "multi": false,
+        "name": "ControllerName",
+        "options": [],
+        "query": {
+          "query": "label_values(huawei_storage_controller_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "test",
+          "value": "test"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_storagepool_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Pool",
+        "multi": false,
+        "name": "Pool",
+        "options": [],
+        "query": {
+          "query": "label_values(huawei_storage_storagepool_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "10",
+          "value": "10"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Lun displayed quantity top",
+        "multi": false,
+        "name": "LunNum",
+        "options": [
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": false,
+            "text": "2",
+            "value": "2"
+          },
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": false,
+            "text": "4",
+            "value": "4"
+          },
+          {
+            "selected": false,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "6",
+            "value": "6"
+          },
+          {
+            "selected": false,
+            "text": "7",
+            "value": "7"
+          },
+          {
+            "selected": false,
+            "text": "8",
+            "value": "8"
+          },
+          {
+            "selected": false,
+            "text": "9",
+            "value": "9"
+          },
+          {
+            "selected": true,
+            "text": "10",
+            "value": "10"
+          }
+        ],
+        "query": "1,2,3,4,5,6,7,8,9,10",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "10",
+          "value": "10"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "File system displayed quantity top",
+        "multi": false,
+        "name": "FileSystemNum",
+        "options": [
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": false,
+            "text": "2",
+            "value": "2"
+          },
+          {
+            "selected": false,
+            "text": "3",
+            "value": "3"
+          },
+          {
+            "selected": false,
+            "text": "4",
+            "value": "4"
+          },
+          {
+            "selected": false,
+            "text": "5",
+            "value": "5"
+          },
+          {
+            "selected": false,
+            "text": "6",
+            "value": "6"
+          },
+          {
+            "selected": false,
+            "text": "7",
+            "value": "7"
+          },
+          {
+            "selected": false,
+            "text": "8",
+            "value": "8"
+          },
+          {
+            "selected": false,
+            "text": "9",
+            "value": "9"
+          },
+          {
+            "selected": true,
+            "text": "10",
+            "value": "10"
+          }
+        ],
+        "query": "1,2,3,4,5,6,7,8,9,10",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "tags": [],
+          "text": [
+            "pvc-a48431ac-df84-47d0-90d3-b82d72e2eaaf"
+          ],
+          "value": [
+            "pvc-a48431ac-df84-47d0-90d3-b82d72e2eaaf"
+          ]
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_lun_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Lun",
+        "multi": true,
+        "name": "LunName",
+        "options": [],
+        "query": {
+          "query": "label_values(huawei_storage_lun_total_iops{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "tags": [],
+          "text": [
+            "txwfs"
+          ],
+          "value": [
+            "txwfs"
+          ]
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_filesystem_capacity_usage{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "FileSystem",
+        "multi": true,
+        "name": "FileSystemName",
+        "options": [],
+        "query": {
+          "query": "label_values(huawei_storage_filesystem_capacity_usage{endpoint=~\"$StorageName\",name=~\".*\"},name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "pvc-17201a4a-a4b9-4259-ab2f-92999a6ca00b",
+          "value": "pvc-17201a4a-a4b9-4259-ab2f-92999a6ca00b"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=~\".*\"},pv_name)",
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "pv",
+        "multi": true,
+        "name": "PVName",
+        "options": [
+          {
+            "selected": true,
+            "text": "pvc-17201a4a-a4b9-4259-ab2f-92999a6ca00b",
+            "value": "pvc-17201a4a-a4b9-4259-ab2f-92999a6ca00b"
+          },
+          {
+            "selected": false,
+            "text": "pvc-3f28ea0b-5fba-4151-bf69-c11333005eb4",
+            "value": "pvc-3f28ea0b-5fba-4151-bf69-c11333005eb4"
+          },
+          {
+            "selected": false,
+            "text": "pvc-52ac4adf-4b09-49c9-8c80-ee8e59f76282",
+            "value": "pvc-52ac4adf-4b09-49c9-8c80-ee8e59f76282"
+          },
+          {
+            "selected": false,
+            "text": "pvc-711d20d0-af21-441c-8294-30da379830cd",
+            "value": "pvc-711d20d0-af21-441c-8294-30da379830cd"
+          },
+          {
+            "selected": false,
+            "text": "pvc-a48431ac-df84-47d0-90d3-b82d72e2eaaf",
+            "value": "pvc-a48431ac-df84-47d0-90d3-b82d72e2eaaf"
+          }
+        ],
+        "query": {
+          "query": "label_values(huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=~\".*\"},pv_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 0,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      }
+    ]
+  },
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "OceanStor",
+  "uid": "bicDsaj4z",
+  "version": 11
+}

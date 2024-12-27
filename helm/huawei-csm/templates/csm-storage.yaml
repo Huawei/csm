@@ -1,0 +1,274 @@
+{{ if ((.Values.features).storageTopo).enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: csm-storage-service
+  name: csm-storage-sa
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: topo-service-role
+  labels:
+    app: csm-storage-service
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets", "events", "configmaps" ]
+    verbs: [ "create", "get", "update", "delete" ]
+  - apiGroups: [ "coordination.k8s.io" ]
+    resources: [ "leases" ]
+    verbs: [ "create", "get", "update", "delete" ]
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "resourcetopologies", "resourcetopologies/status" ]
+    verbs: [ "create", "get", "list", "watch", "update", "delete" ]
+  - apiGroups: [ "*" ]
+    resources: [ "*" ]
+    verbs: [ "get", "list", "watch" ]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cmi-controller-role
+  labels:
+    app: csm-storage-service
+rules:
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "storagebackendclaims" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "get", "update" ]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: topo-service-binding
+  labels:
+    app: csm-storage-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-storage-sa
+    namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+roleRef:
+  kind: ClusterRole
+  name: topo-service-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cmi-controller-binding
+  labels:
+    app: csm-storage-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-storage-sa
+    namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+roleRef:
+  kind: ClusterRole
+  name: cmi-controller-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: csm-storage-service
+  name: csm-storage-service
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: {{ (.Values.global).replicaCount | default 1 }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: csm-storage-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: csm-storage-service
+    spec:
+      {{- if ((.Values.features).storageTopo).nodeSelector }}
+      nodeSelector:
+      {{- toYaml ((.Values.features).storageTopo).nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.global).balancedDeploy }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - csm-prometheus-service
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- end}}
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: {{ ((.Values.global).tolerations).notReadySeconds | default 15 }}
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: {{ ((.Values.global).tolerations).unreachableSeconds | default 15 }}
+      serviceAccount: csm-storage-sa
+      serviceAccountName: csm-storage-sa
+      containers:
+        - name: liveness-probe
+          args:
+            - --cmi-address={{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - --ip-address=$(POD_IP)
+            - --healthz-port={{ (.Values.global).healthPort | default 9808 }}
+            - --log-file-dir=/var/log/huawei-csm/csm-storage-service
+            - --log-file=liveness-prob
+            {{- include "log" .Values.global.logging | nindent 12 }}
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.livenessProbe" .Values.images.livenessProbe }}
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.storageService.livenessProbe.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.livenessProbe.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.storageService.livenessProbe.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.livenessProbe.limits.memory }}
+        - name: cmi-controller
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.containerMonitorInterface"
+           .Values.images.containerMonitorInterface }}
+          env:
+            - name: ENDPOINT
+              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          args:
+            - --cmi-address=$(ENDPOINT)
+            - --cmi-name=cmi.huawei.com
+            - --page-size=100
+            - --backend-namespace=huawei-csi
+            - --log-file-dir=/var/log/huawei-csm/csm-storage-service
+            - --log-file=cmi-service
+            {{- include "log" .Values.global.logging | nindent 12 }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 3
+          ports:
+            - containerPort: {{ (.Values.global).healthPort | default 9808 }}
+              name: healthz
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log/
+              name: log
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.storageService.cmiController.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.cmiController.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.storageService.cmiController.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.cmiController.limits.memory }}
+        - args:
+            - --cmi-address=$(ENDPOINT)
+            - --rt-retry-base-delay={{ ((.Values.features).storageTopo).rtRetryBaseDelay | default "5s" }}
+            - --pv-retry-base-delay={{ ((.Values.features).storageTopo).pvRetryBaseDelay | default "5s" }}
+            - --pod-retry-base-delay={{ ((.Values.features).storageTopo).podRetryBaseDelay | default "5s" }}
+            - --rt-retry-max-delay={{ ((.Values.features).storageTopo).rtRetryMaxDelay | default "5m" }}
+            - --pv-retry-max-delay={{ ((.Values.features).storageTopo).pvRetryMaxDelay | default "1m" }}
+            - --pod-retry-max-delay={{ ((.Values.features).storageTopo).podRetryMaxDelay | default "1m" }}
+            - --resync-period={{ ((.Values.features).storageTopo).resyncPeriod | default "15m" }}
+            - --csi-driver-name={{ (.Values.global).csiDriverName }}
+            {{- include "leader-election" . | nindent 12 }}
+            - --log-file-dir=/var/log/huawei-csm/csm-storage-service
+            - --log-file=topo-service
+            {{- include "log" .Values.global.logging | nindent 12 }}
+          env:
+            - name: ENDPOINT
+              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: CLUSTER_NAME
+              value: {{ (.Values.cluster).name }}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.topoService" .Values.images.topoService }}
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          name: topo-service
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.storageService.topoService.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.topoService.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.storageService.topoService.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.storageService.topoService.limits.memory }}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+            - mountPath: /etc/localtime
+              name: host-time
+      volumes:
+        - emptyDir: { }
+          name: socket-dir
+        - hostPath:
+            path: /var/log/
+            type: Directory
+          name: log
+        - hostPath:
+            path: /etc/localtime
+            type: File
+          name: host-time
+{{ end }}

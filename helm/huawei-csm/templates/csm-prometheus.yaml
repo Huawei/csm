@@ -1,0 +1,304 @@
+{{ if ((.Values.features).prometheusCollector).enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csm-prometheus-sa
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+  labels:
+    app: csm-prometheus-service
+{{ if (((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: prometheus-ssl
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+data:
+  tls.crt: {{ .Files.Get (((.Values.features).prometheusCollector).prometheusCollectorSSL).certPath | b64enc }}
+  tls.key: {{ .Files.Get (((.Values.features).prometheusCollector).prometheusCollectorSSL).keyPath | b64enc }}
+{{ end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-collector-role
+  labels:
+    app: csm-prometheus-service
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "persistentvolumes","persistentvolumeclaims","pods" ]
+    verbs: [ "get","list" ]
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "storagebackendclaims" ]
+    verbs: [ "get","list" ]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: prometheus-collector-binding
+  labels:
+    app: csm-prometheus-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-prometheus-sa
+    namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+roleRef:
+  kind: ClusterRole
+  name: prometheus-collector-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cmi-collector-role
+  labels:
+    app: csm-prometheus-service
+rules:
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "storagebackendclaims" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "get", "update" ]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cmi-collector-binding
+  labels:
+    app: csm-prometheus-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-prometheus-sa
+    namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+roleRef:
+  kind: ClusterRole
+  name: cmi-collector-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csm-prometheus-service
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+  labels:
+    app: csm-prometheus-service
+spec:
+  replicas: {{ (.Values.global).replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: csm-prometheus-service
+  template:
+    metadata:
+      labels:
+        app: csm-prometheus-service
+    spec:
+      {{- if ((.Values.features).prometheusCollector).nodeSelector }}
+      nodeSelector:
+      {{- toYaml ((.Values.features).prometheusCollector).nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if (.Values.global).balancedDeploy }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - csm-storage-service
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      {{- end}}
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: {{ ((.Values.global).tolerations).notReadySeconds | default 15 }}
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: {{ ((.Values.global).tolerations).unreachableSeconds | default 15 }}
+      serviceAccount: csm-prometheus-sa
+      serviceAccountName: csm-prometheus-sa
+      containers:
+        - name: liveness-probe
+          args:
+            - --cmi-address={{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - --ip-address=$(POD_IP)
+            - --healthz-port={{ (.Values.global).healthPort | default 9808 }}
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=liveness-probe
+            {{- include "log" (.Values.global).logging | nindent 12 }}
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.livenessProbe" .Values.images.livenessProbe }}
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.limits.memory }}
+        - name: prometheus-collector
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.prometheusCollector" .Values.images.prometheusCollector }}
+          env:
+            - name: ENDPOINT
+              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          args:
+            - --cmi-address=$(ENDPOINT)
+            - --ip-address=$(POD_IP)
+            - --exporter-port=8887
+            - --use-https={{(((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=prometheus-collector
+            - --csi-driver-name={{ (.Values.global).csiDriverName }}
+            {{- include "log" .Values.global.logging | nindent 12 }}
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+            - mountPath: /etc/localtime
+              name: host-time
+            {{- if (((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
+            - name: secret-volume
+              mountPath: /etc/secret-volume
+              readOnly: true
+            {{- end}}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              {{- if (((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
+              scheme: HTTPS
+              {{- end }}
+              path: /healthz
+              port: 8887
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.limits.memory }}
+        - name: cmi-controller
+          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
+          }}{{ required "Must provide the .Values.images.containerMonitorInterface"
+           .Values.images.containerMonitorInterface }}
+          env:
+            - name: ENDPOINT
+              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
+          args:
+            - --cmi-address=$(ENDPOINT)
+            - --cmi-name=cmi.huawei.com
+            - --page-size=100
+            - --backend-namespace=huawei-csi
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=cmi-service
+            {{- include "log" .Values.global.logging | nindent 12 }}
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 3
+          ports:
+            - containerPort: {{ (.Values.global).healthPort | default 9808 }}
+              name: healthz
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log/
+              name: log
+            - mountPath: /etc/localtime
+              name: host-time
+          resources:
+            requests:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.cmiController.requests.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.cmiController.requests.memory }}
+            limits:
+              cpu: {{ .Values.containerResourcesSet.prometheusService.cmiController.limits.cpu }}
+              memory: {{ .Values.containerResourcesSet.prometheusService.cmiController.limits.memory }}
+      volumes:
+        - emptyDir: { }
+          name: socket-dir
+        - hostPath:
+            path: /var/log/
+            type: Directory
+          name: log
+        - hostPath:
+            path: /etc/localtime
+            type: File
+          name: host-time
+        {{- if (((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
+        - name: secret-volume
+          secret:
+            secretName: prometheus-ssl
+            defaultMode: 0400
+        {{- end}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: csm-prometheus-service
+  namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
+  labels:
+    app: csm-prometheus-service
+spec:
+  selector:
+    app: csm-prometheus-service
+  type: NodePort
+  ports:
+    - name: prometheus-collector
+      protocol: TCP
+      port: 8887
+      targetPort: 8887
+      nodePort: {{ ((.Values.features).prometheusCollector).nodePort | default 30074 }}
+{{ end }}

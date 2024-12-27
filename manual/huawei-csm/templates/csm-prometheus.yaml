@@ -1,0 +1,289 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: csm-prometheus-sa
+  namespace: huawei-csm
+  labels:
+    app: csm-prometheus-service
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-collector-role
+  labels:
+    app: csm-prometheus-service
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "persistentvolumes","persistentvolumeclaims","pods" ]
+    verbs: [ "get","list" ]
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "storagebackendclaims" ]
+    verbs: [ "get","list" ]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: prometheus-collector-binding
+  labels:
+    app: csm-prometheus-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-prometheus-sa
+    namespace: huawei-csm
+roleRef:
+  kind: ClusterRole
+  name: prometheus-collector-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cmi-collector-role
+  labels:
+    app: csm-prometheus-service
+rules:
+  - apiGroups: [ "xuanwu.huawei.io" ]
+    resources: [ "storagebackendclaims" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "get", "update" ]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cmi-collector-binding
+  labels:
+    app: csm-prometheus-service
+subjects:
+  - kind: ServiceAccount
+    name: csm-prometheus-sa
+    namespace: huawei-csm
+roleRef:
+  kind: ClusterRole
+  name: cmi-collector-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csm-prometheus-service
+  namespace: huawei-csm
+  labels:
+    app: csm-prometheus-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csm-prometheus-service
+  template:
+    metadata:
+      labels:
+        app: csm-prometheus-service
+    spec:
+# uncomment if you wish to configure selection constraints for csm-prometheus-service pods
+#      nodeSelector:
+#        kubernetes.io/hostname: ""
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - csm-storage-service
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 15
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 15
+      serviceAccount: csm-prometheus-sa
+      serviceAccountName: csm-prometheus-sa
+      containers:
+        - name: liveness-probe
+          args:
+            - --cmi-address=/cmi/cmi.sock
+            - --ip-address=$(POD_IP)
+            - --healthz-port=9808
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=liveness-probe
+            - --logging-module=file
+            - --log-level=info
+            - --log-file-size=20M
+            - --max-backups=9
+          image: csm-liveness-probe:{{version}}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+          resources:
+            requests:
+              cpu: 10m
+              memory: 128Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+        - name: prometheus-collector
+          image: csm-prometheus-collector:{{version}}
+          env:
+            - name: ENDPOINT
+              value: /cmi/cmi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          imagePullPolicy: IfNotPresent
+          args:
+            - --cmi-address=$(ENDPOINT)
+            - --ip-address=$(POD_IP)
+            - --exporter-port=8887
+            - --use-https=false    # modify the value to "true" if configured the SSL cert
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=prometheus-collector
+            - --csi-driver-name=csi.huawei.com
+            - --logging-module=file
+            - --log-level=info
+            - --log-file-size=20M
+            - --max-backups=9
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log
+              name: log
+            - mountPath: /etc/localtime
+              name: host-time
+# uncomment if configured the SSL cert
+#            - name: secret-volume
+#              mountPath: /etc/secret-volume
+#              readOnly: true
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+# uncomment if configured the SSL cert
+#              scheme: HTTPS
+              path: /healthz
+              port: 8887
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+        - name: cmi-controller
+          image: csm-cmi:{{version}}
+          env:
+            - name: ENDPOINT
+              value: /cmi/cmi.sock
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          imagePullPolicy: IfNotPresent
+          args:
+            - --cmi-address=$(ENDPOINT)
+            - --cmi-name=cmi.huawei.com
+            - --page-size=100
+            - --backend-namespace=huawei-csi
+            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
+            - --log-file=cmi-service
+            - --logging-module=file
+            - --log-level=info
+            - --log-file-size=20M
+            - --max-backups=9
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 3
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /cmi
+              name: socket-dir
+            - mountPath: /var/log/
+              name: log
+            - mountPath: /etc/localtime
+              name: host-time
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 512Mi
+      volumes:
+        - emptyDir: { }
+          name: socket-dir
+        - hostPath:
+            path: /var/log/
+            type: Directory
+          name: log
+        - hostPath:
+            path: /etc/localtime
+            type: File
+          name: host-time
+# uncomment if configured the SSL cert
+#        - name: secret-volume
+#          secret:
+#            secretName: prometheus-ssl
+#            defaultMode: 0400
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: csm-prometheus-service
+  namespace: huawei-csm
+  labels:
+    app: csm-prometheus-service
+spec:
+  selector:
+    app: csm-prometheus-service
+  type: NodePort
+  ports:
+    - name: prometheus-collector
+      protocol: TCP
+      port: 8887
+      targetPort: 8887
+      nodePort: 30074

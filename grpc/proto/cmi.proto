@@ -1,0 +1,178 @@
+/*
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+syntax = "proto3";
+package cmi.v1;
+
+import "google/protobuf/wrappers.proto";
+option go_package = "lib/go;cmi";
+
+message CreateLabelRequest{
+  // This field is REQUIRED.Value of this field is unique for a volume.
+  string volume_id = 1;
+
+  // This field is REQUIRED.Value of this field is label name.
+  string label_name = 2;
+
+  // This field is REQUIRED.Value of this field is label kind, e.g. Pod, PersistentVolume...
+  string kind = 3;
+
+  // This field is OPTIONAL. This allows to specify the namespace when kind is Pod
+  // If not specified, will use 'default' as the default namespace
+  string namespace = 4;
+
+  // This field is OPTIONAL.This allows to specify the cluster name when kind is PersistentVolume
+  string cluster_name = 5;
+
+  // Specific parameters passed in as opaque key-value pairs.
+  // This field is OPTIONAL. The CMI is responsible for parsing and validating these parameters.
+  map<string, string> parameters = 6;
+}
+
+message CreateLabelResponse{
+  // Indicates if success or not
+  google.protobuf.BoolValue success = 1;
+}
+
+message DeleteLabelRequest{
+  // This field is REQUIRED.Value of this field is unique for a volume.
+  string volume_id = 1;
+
+  // This field is REQUIRED.Value of this field is label name.
+  string label_name = 2;
+
+  // This field is REQUIRED.Value of this field is label kind, e.g. Pod, PersistentVolume...
+  string kind = 3;
+
+  // This field is OPTIONAL. This allows to specify the namespace when kind is Pod
+  // If not specified, will use 'default' as the default namespace
+  string namespace = 4;
+}
+
+message DeleteLabelResponse{
+  // Indicates if success or not
+  google.protobuf.BoolValue success = 1;
+}
+
+// Probe request to check health/availability
+message ProbeRequest{}
+
+// Response to indicate health/availability status
+message ProbeResponse {
+  // Indicates if healthy/available or not
+  google.protobuf.BoolValue ready = 1;
+}
+
+message GetProviderCapabilitiesRequest{
+  // Intentionally empty.
+}
+
+message GetProviderCapabilitiesResponse{
+  // All the capabilities that the CMI supports. This field is OPTIONAL.
+  repeated ProviderCapability capabilities = 1;
+}
+
+message ProviderCapability{
+  enum Type{
+    // If CMI implements ProviderCapability_Label_Service capability
+    // then it must implement CreateLabel RPC and DeleteLabel RPC.
+    ProviderCapability_Label_Service = 0;
+    // If CMI implements ProviderCapability_Label_Service capability
+    // then it must implement Collect RPC call for fetching storage information.
+    ProviderCapability_Collect_Service = 1;
+  }
+
+  Type type = 1;
+}
+
+message GetProviderInfoRequest{
+  // Intentionally empty.
+}
+
+message GetProviderInfoResponse{
+  // This field is REQUIRED. Value of this field is unique name for CMI.
+  string provider = 1;
+}
+
+message CollectRequest{
+  // This field is REQUIRED. Value of this field is StorageBlackClaim name.
+  // See StorageBlackClaim resource for details.
+  string backend_name = 1;
+
+  // This field is REQUIRED. Value of this field is collect type.
+  // Indicates that type of data to be collected by Collect request.
+  string collect_type = 2;
+
+  // This field is REQUIRED. Value of this field is metrics type.
+  // Allowed values:
+  //   object: will collect object data, e.g. controller's cpu usage...
+  //   performance: will collect performance data, e.g. controller's read bandwidth...
+  string metrics_type = 3;
+
+  // This field is REQUIRED when metrics_type is performance
+  repeated string indicators = 4;
+}
+
+message CollectResponse{
+  // This field is REQUIRED.
+  // See CollectRequest's backend_name for details.
+  string backend_name = 1;
+
+  // This field is REQUIRED.
+  // See CollectRequest's collect_type for details.
+  string collect_type = 2;
+
+  // This field is REQUIRED.
+  // See CollectRequest's metrics_type for details.
+  string metrics_type = 3;
+
+  // The list of collected data.
+  repeated CollectDetail details = 4;
+}
+
+message CollectDetail{
+  // This field is REQUIRED. Value of this field is a map of data to be collected.
+  // Collected data are specified in as key-value pairs.
+  map<string, string> data = 6;
+}
+
+service Identity{
+  // Get CMI running status.
+  rpc Probe(ProbeRequest)
+      returns (ProbeResponse) {}
+
+  // Get CMI information, e.g. provider's name.
+  rpc GetProvisionerInfo(GetProviderInfoRequest)
+      returns (GetProviderInfoResponse) {}
+
+  // Get CMI capabilities
+  // Though it, can know which interfaces have been implemented by CMI.
+  rpc GetProviderCapabilities(GetProviderCapabilitiesRequest)
+      returns (GetProviderCapabilitiesResponse) {}
+}
+
+service LabelService{
+  // Create label
+  rpc CreateLabel(CreateLabelRequest)
+      returns (CreateLabelResponse) {}
+
+  // Delete label
+  rpc DeleteLabel(DeleteLabelRequest)
+      returns (DeleteLabelResponse) {}
+}
+
+service Collector{
+  // collect storage info
+  rpc Collect(CollectRequest)
+      returns (CollectResponse){}
+}

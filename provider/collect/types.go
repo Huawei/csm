@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,5 +74,6 @@ type FileSystemObject struct {
 	Name                           string `json:"NAME" metrics:"NAME"`
 	Capacity                       string `json:"CAPACITY" metrics:"CAPACITY"`
 	AllocCapacity                  string `json:"ALLOCCAPACITY" metrics:"ALLOCCAPACITY"`
+	AllocatedPoolQuota             string `json:"allocatedPoolQuota" metrics:"allocatedPoolQuota"`
 	AvailableAndAllocCapacityRatio string `json:"AVAILABLEANDALLOCCAPACITYRATIO" metrics:"AVAILABLEANDALLOCCAPACITYRATIO"`
 }

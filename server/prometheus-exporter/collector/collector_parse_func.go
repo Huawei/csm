@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,10 +26,9 @@ const (
 	runningStatusToPrometheus = "running_status"
 	runningStatusFromStorage  = "RUNNINGSTATUS"
 	sectorsTOGb               = 1024 * 1024 * 2
-	capacityKey               = "CAPACITY"
-	allocCapacityKey          = "ALLOCCAPACITY"
 	calculatePercentage       = 100
 	bitSize                   = 64
+	unlimitedPrecision        = -1
 	precisionOfTwo            = 2
 	precisionOfFour           = 4
 )
@@ -90,19 +89,4 @@ func parseLabelListToLabelValueSlice(labelKeys []string,
 		labelValueSlice = append(labelValueSlice, labelValue)
 	}
 	return labelValueSlice
-}
-
-func parseCapacityUsage(inDataKey, metricsName string, inData map[string]string) string {
-	if len(inData) == 0 {
-		return ""
-	}
-	capacity, err := strconv.ParseFloat(inData[capacityKey], bitSize)
-	if err != nil || capacity == 0 {
-		return ""
-	}
-	allocCapacity, err := strconv.ParseFloat(inData[allocCapacityKey], bitSize)
-	if err != nil {
-		return ""
-	}
-	return strconv.FormatFloat(allocCapacity/capacity*calculatePercentage, 'f', precisionOfTwo, bitSize)
 }

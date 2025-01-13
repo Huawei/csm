@@ -69,9 +69,10 @@ func Test_parsePVCapacityUsageSan(t *testing.T) {
 
 	// action
 	got := parsePVCapacityUsage(mockInDataKey, mockMetricsName, mockInData)
+	want := "10"
 
 	// assert
-	if !reflect.DeepEqual(got, "10.00") {
-		t.Errorf("parseStorageData() got = %v, want %v", got, "fake_data")
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("parseStorageData() got = %v, want %v", got, want)
 	}
 }

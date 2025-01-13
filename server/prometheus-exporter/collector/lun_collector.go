@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package collector
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -28,6 +29,11 @@ import (
 func init() {
 	RegisterCollector("lun", NewLunCollector)
 }
+
+const (
+	lunCapacityKey     = "CAPACITY"
+	lunUsedCapacityKey = "ALLOCCAPACITY"
+)
 
 var lunBuildMap = map[string]collectorInitFunc{
 	"object":      buildObjectLunCollector,
@@ -45,7 +51,7 @@ var lunObjectMetricsHelpMap = map[string]string{
 
 var lunObjectMetricsParseMap = map[string]parseRelation{
 	"capacity":       {"CAPACITY", parseStorageSectorsToGB},
-	"capacity_usage": {"", parseCapacityUsage},
+	"capacity_usage": {"", parseLunCapacityUsage},
 }
 var lunObjectLabelParseMap = map[string]parseRelation{
 	"endpoint": {"backendName", parseStorageData},
@@ -93,4 +99,19 @@ func NewLunCollector(backendName, monitorType string, metricsIndicators []string
 			"the monitor type not in object or performance")
 	}
 	return buildFunc(backendName, monitorType, metricsIndicators, metricsDataCache)
+}
+
+func parseLunCapacityUsage(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+	capacity, err := strconv.ParseFloat(inData[lunCapacityKey], bitSize)
+	if err != nil || capacity == 0 {
+		return ""
+	}
+	allocCapacity, err := strconv.ParseFloat(inData[lunUsedCapacityKey], bitSize)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatFloat(allocCapacity/capacity*calculatePercentage, 'f', unlimitedPrecision, bitSize)
 }

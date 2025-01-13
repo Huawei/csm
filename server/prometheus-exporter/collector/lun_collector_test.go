@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,11 +31,12 @@ func Test_parseLunCapacityUsage(t *testing.T) {
 	}
 
 	// action
-	got := parseCapacityUsage("", "", mockInData)
+	got := parseLunCapacityUsage("", "", mockInData)
+	want := "50"
 
 	// assert
-	if !reflect.DeepEqual(got, "50.00") {
-		t.Errorf("parseStorageStatus() got = %v, want %v", got, "50.00")
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("parseStorageStatus() got = %v, want %v", got, want)
 	}
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package collector
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -28,6 +29,11 @@ import (
 func init() {
 	RegisterCollector("filesystem", NewFilesystemCollector)
 }
+
+const (
+	filesystemCapacityKey     = "CAPACITY"
+	filesystemUsedCapacityKey = "allocatedPoolQuota"
+)
 
 var filesystemBuildMap = map[string]collectorInitFunc{
 	"object":      buildObjectFilesystemCollector,
@@ -45,7 +51,7 @@ var filesystemObjectMetricsHelpMap = map[string]string{
 
 var filesystemObjectMetricsParseMap = map[string]parseRelation{
 	"capacity":       {"CAPACITY", parseStorageSectorsToGB},
-	"capacity_usage": {"", parseCapacityUsage},
+	"capacity_usage": {"", parseFilesystemCapacityUsage},
 }
 var filesystemObjectLabelParseMap = map[string]parseRelation{
 	"endpoint": {"backendName", parseStorageData},
@@ -93,4 +99,19 @@ func NewFilesystemCollector(backendName string, monitorType string, metricsIndic
 			"the monitor type not in object or performance")
 	}
 	return buildFunc(backendName, monitorType, metricsIndicators, metricsDataCache)
+}
+
+func parseFilesystemCapacityUsage(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+	capacity, err := strconv.ParseFloat(inData[filesystemCapacityKey], bitSize)
+	if err != nil || capacity == 0 {
+		return ""
+	}
+	usedCapacity, err := strconv.ParseFloat(inData[filesystemUsedCapacityKey], bitSize)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatFloat(usedCapacity/capacity*calculatePercentage, 'f', unlimitedPrecision, bitSize)
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ var pvObjectMetricsHelpMap = map[string]string{
 
 var pvObjectMetricsParseMap = map[string]parseRelation{
 	"capacity":       {"CAPACITY", parseStorageSectorsToGB},
-	"capacity_usage": {"", parseCapacityUsage},
+	"capacity_usage": {"", parsePVCapacityUsage},
 }
 
 var pvTypePrometheusMetrics = map[string][]string{
@@ -124,10 +124,10 @@ func parsePVCapacityUsage(inDataKey, metricsName string, inData map[string]strin
 	}
 	var pvCapacityUsage string
 	if pvType == "oceanstor-san" {
-		pvCapacityUsage = parseCapacityUsage(inDataKey, metricsName, inData)
+		pvCapacityUsage = parseLunCapacityUsage(inDataKey, metricsName, inData)
 	}
 	if pvType == "oceanstor-nas" {
-		pvCapacityUsage = parseStorageData("AVAILABLEANDALLOCCAPACITYRATIO", metricsName, inData)
+		pvCapacityUsage = parseFilesystemCapacityUsage(inDataKey, metricsName, inData)
 	}
 	return pvCapacityUsage
 }

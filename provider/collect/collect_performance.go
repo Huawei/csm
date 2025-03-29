@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/huawei/csm/v2/grpc/lib/go/cmi"
@@ -104,12 +103,10 @@ func GetPerformanceData(ctx context.Context, client *centralizedstorage.Centrali
 	if !ok {
 		// storage of V3 or V5 not has the pointRelease field
 		postEnable = false
-	} else if !strings.HasPrefix(version, constants.StorageV6PointReleasePrefix) {
-		// only storage of V6 pointRelease is started with number,
-		// storage with V7 or later version supports the Post request
-		postEnable = true
-	} else if version >= constants.MinVersionSupportPost {
-		// 6.1.2 and later versions in V6 storage support the Post request
+	}
+
+	if utils.CompareVersions(version, constants.MinVersionSupportPost) != -1 {
+		// 6.1.2 and later versions support the Post request
 		postEnable = true
 	}
 

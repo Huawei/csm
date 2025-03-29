@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2022-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ var (
 		"GetControllers":  "/controller",
 
 		// lun
-		"GetLuns":      "/lun?range=[{{.start}}-{{.end}}]",
+		"GetLuns":      "/lun?filter=SUBTYPE::0&range=[{{.start}}-{{.end}}]",
 		"GetLunCount":  "/lun/count",
 		"GetLunByName": "/lun?filter=NAME::{{.lunName}}&range=[0-100]",
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package exporterhandler
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 
 	"github.com/huawei/csm/v2/server/prometheus-exporter/collector"
 	metricsCache "github.com/huawei/csm/v2/server/prometheus-exporter/metricscache"
@@ -59,13 +60,11 @@ func checkMetricsObject(ctx context.Context, params map[string][]string, monitor
 
 	for collectorName, metricsIndicators := range params {
 		if _, err := metricsObjectLegal[collectorName]; !err {
-			log.AddContext(ctx).Errorln("the collectorName is error")
-			return fmt.Errorf("the collectorName is error")
+			return fmt.Errorf("the collectorName [%s] is invalid", collectorName)
 		}
 
 		if monitorType == "performance" && (len(metricsIndicators) == 0 || metricsIndicators[0] == "") {
-			log.AddContext(ctx).Errorf("can not get the [%s] performance indicators", collectorName)
-			return fmt.Errorf("the metricsIndicators is error")
+			return fmt.Errorf("can not get the [%s] performance indicators", collectorName)
 		}
 	}
 
@@ -75,22 +74,22 @@ func checkMetricsObject(ctx context.Context, params map[string][]string, monitor
 func parseRequestPath(ctx context.Context, w http.ResponseWriter, r *http.Request) (string, string, error) {
 	path := strings.Split(r.URL.Path, "/")
 	if len(path) != pathLen {
-		http.Error(w, "URL is error.", http.StatusBadRequest)
-		return "", "", errors.New("URL is error")
+		http.Error(w, "URL is invalid.", http.StatusBadRequest)
+		return "", "", fmt.Errorf("url [%s] is invalid", path)
 	}
 
 	monitorType := path[1]
 	if _, err := monitorTypeLegal[monitorType]; !err {
-		http.Error(w, "MonitorType is error.", http.StatusBadRequest)
-		return "", "", errors.New("MonitorType is error")
+		http.Error(w, "MonitorType is invalid.", http.StatusBadRequest)
+		return "", "", fmt.Errorf("monitor type [%s] is invalid", monitorType)
 	}
 
 	monitorBackendName := path[2]
 	params := r.URL.Query()
 	checkError := checkMetricsObject(ctx, params, monitorType)
 	if checkError != nil {
-		http.Error(w, "MetricsObjectType is error.", http.StatusBadRequest)
-		return "", "", errors.New("MetricsObjectType is error")
+		http.Error(w, "MetricsObjectType is invalid.", http.StatusBadRequest)
+		return "", "", fmt.Errorf("check metrics object failed, err is [%w]", checkError)
 	}
 	return monitorBackendName, monitorType, nil
 }
@@ -101,7 +100,7 @@ func getBatchData(ctx context.Context, monitorBackendName, monitorType string,
 		BackendName:  monitorBackendName,
 		CacheDataMap: make(map[string]metricsCache.MetricsData),
 		MergeMetrics: make(map[string]metricsCache.MergeMetricsData)}
-	log.AddContext(ctx).Infof("start to get batch monitor data, backend: %v, type: %v, params: %v",
+	log.AddContext(ctx).Infof("start to get batch monitor data, backend: %v, monitor type: %v, params: %v",
 		monitorBackendName, monitorType, params)
 	batchParams, err := batchMetricsDataCache.BuildBatchDataClass(ctx, monitorType, params)
 	if err != nil {
@@ -117,18 +116,26 @@ func getBatchData(ctx context.Context, monitorBackendName, monitorType string,
 func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx, err := log.SetRequestInfo(context.Background())
 	if err != nil {
+		log.Errorf("set request info failed, err is [%v]", err)
 		return
 	}
 	monitorBackendName, monitorType, err := parseRequestPath(ctx, w, r)
 	if err != nil {
+		log.AddContext(ctx).Errorf("parse request failed, err is [%v], request is [%v]", err, r)
 		return
 	}
 
 	params := r.URL.Query()
 
 	batchMetricsDataCache := getBatchData(ctx, monitorBackendName, monitorType, params)
+
 	if batchMetricsDataCache == nil {
+		log.AddContext(ctx).Infoln("nothing is collected")
 		return
+	}
+
+	if log.GetLogLevel() == logrus.DebugLevel {
+		logCollectedData(ctx, batchMetricsDataCache)
 	}
 
 	allCollectors, err := collector.NewCollectorSet(
@@ -142,4 +149,26 @@ func MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	registry.MustRegister(allCollectors)
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
+}
+
+func logCollectedData(ctx context.Context, batchMetricsDataCache *metricsCache.MetricsDataCache) {
+	for collectType, data := range batchMetricsDataCache.CacheDataMap {
+		if data == nil {
+			log.AddContext(ctx).Debugf("get nil data with collect type %s", collectType)
+			continue
+		}
+		resp := data.GetMetricsDataResponse()
+		if resp == nil {
+			log.AddContext(ctx).Debugf("get nil data response with collect type %s", collectType)
+			continue
+		}
+
+		detailJson, err := json.Marshal(resp.Details)
+		if err != nil {
+			log.AddContext(ctx).Errorf("encode %s data failed, err is %v", collectType, err)
+			continue
+		}
+
+		log.AddContext(ctx).Debugf("the %s collect data detail is %s", collectType, string(detailJson))
+	}
 }

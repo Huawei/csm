@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -104,6 +104,8 @@ type Logger interface {
 	Fatalln(args ...interface{})
 
 	AddField(field string, value interface{}) Logger
+
+	GetLevel() logrus.Level
 }
 
 type loggerImpl struct {
@@ -338,6 +340,11 @@ func (logger *loggerImpl) AddField(field string, value interface{}) Logger {
 	}
 }
 
+// GetLevel gets log level
+func (logger *loggerImpl) GetLevel() logrus.Level {
+	return logger.Logger.GetLevel()
+}
+
 // EnsureGRPCContext ensures adding request id in incoming unary grpc context
 func EnsureGRPCContext(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler) (interface{}, error) {
@@ -424,4 +431,9 @@ func Flush() {
 // Close ensures closing output stream
 func Close() {
 	logger.close()
+}
+
+// GetLogLevel gets logger level
+func GetLogLevel() logrus.Level {
+	return logger.GetLevel()
 }

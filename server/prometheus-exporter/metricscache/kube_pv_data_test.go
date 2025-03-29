@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import (
 
 func Test_buildOutPVData(t *testing.T) {
 	// arrange
+	ctx := context.TODO()
 	mockOutPVData := &storageGRPC.CollectResponse{
 		BackendName: "fake_backend",
 		CollectType: "fake_type",
@@ -59,7 +60,7 @@ func Test_buildOutPVData(t *testing.T) {
 		})
 
 	// action
-	got := buildOutPVData("fake_backend", "fake_type", mockAllSBCInfo, mockAllPVData)
+	got := buildOutPVData(ctx, "fake_backend", "fake_type", mockAllSBCInfo, mockAllPVData)
 
 	// assert
 	if !reflect.DeepEqual(got, mockOutPVData) {
@@ -121,8 +122,8 @@ func TestGetAndParsePVInfo_Success(t *testing.T) {
 		return map[string]map[string]string{
 			backendName: {"namespace": "mockNamespace", "sbcStorageType": "mockStorageType"},
 		}
-	}).ApplyFunc(buildOutPVData, func(backendName, collectType string, allSBCInfo map[string]map[string]string,
-		allPVData []coreV1.PersistentVolume) *storageGRPC.CollectResponse {
+	}).ApplyFunc(buildOutPVData, func(ctx context.Context, backendName, collectType string,
+		allSBCInfo map[string]map[string]string, allPVData []coreV1.PersistentVolume) *storageGRPC.CollectResponse {
 		return outPVData
 	})
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package metricscache
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 
 	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
@@ -73,12 +73,11 @@ func (storageMetricsData *StorageMetricsData) getStorageData(ctx context.Context
 	storageGRPCClient := usedClientSet.StorageGRPCClientSet.CollectorClient
 	batchCollectResponse, err := storageGRPCClient.Collect(ctx, batchCollectRequest)
 	if err != nil {
-		log.AddContext(ctx).Warningf("can not get storage response the err is [%v]", err)
-		return nil, errors.New("please continue collect next data")
+		return nil, fmt.Errorf("can not get storage response the err is [%w]", err)
 	}
+
 	if batchCollectResponse.Details == nil {
-		log.AddContext(ctx).Warningln("can not get storage data")
-		return nil, errors.New("please continue collect next data")
+		log.AddContext(ctx).Warningln("get storage response of <nil>")
 	}
 	return batchCollectResponse, nil
 }
@@ -90,8 +89,7 @@ func (storageMetricsData *StorageMetricsData) SetMetricsData(ctx context.Context
 		"indicators: %v", collectorName, monitorType, metricsIndicators)
 	usedClientSet := clientSet.GetExporterClientSet()
 	if usedClientSet.InitError != nil {
-		log.AddContext(ctx).Errorln("can not get Client Set when get data")
-		return errors.New("can not get Client Set when get data")
+		return fmt.Errorf("can not get clientset when set metrics data, client err is [%w]", usedClientSet.InitError)
 	}
 
 	// get storage data
@@ -99,7 +97,7 @@ func (storageMetricsData *StorageMetricsData) SetMetricsData(ctx context.Context
 		collectorName, monitorType, metricsIndicators)
 	batchCollectResponse, err := storageMetricsData.getStorageData(ctx, batchCollectRequest, usedClientSet)
 	if err != nil {
-		return err
+		return fmt.Errorf("get storage data with request [%v] failed, err is [%w]", batchCollectRequest, err)
 	}
 	storageMetricsData.MetricsDataResponse = batchCollectResponse
 	log.AddContext(ctx).Infoln("get storage metrics data success")

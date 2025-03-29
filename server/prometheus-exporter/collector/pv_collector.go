@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -73,12 +73,12 @@ var pvPrometheusMetricsHelpMap = map[string]string{
 }
 
 var pvPrometheusMetricsParseMap = map[string]parseRelation{
-	"lun_total_bandwidth":                    {"21", parseStorageData},
-	"lun_pv_lun_total_iops":                  {"22", parseStorageData},
-	"lun_avg_io_response_time":               {"370", parseStorageData},
-	"filesystem_ops":                         {"182", parseStorageData},
-	"filesystem_avg_read_ops_response_time":  {"524", parseStorageData},
-	"filesystem_avg_write_ops_response_time": {"525", parseStorageData},
+	"lun_total_bandwidth":                    {"21", parsePVLunData},
+	"lun_pv_lun_total_iops":                  {"22", parsePVLunData},
+	"lun_avg_io_response_time":               {"370", parsePVLunData},
+	"filesystem_ops":                         {"182", parsePVFSData},
+	"filesystem_avg_read_ops_response_time":  {"524", parsePVFSData},
+	"filesystem_avg_write_ops_response_time": {"525", parsePVFSData},
 }
 
 var pvLabelParseMap = map[string]parseRelation{
@@ -97,6 +97,40 @@ func init() {
 
 type PVCollector struct {
 	*BaseCollector
+}
+
+func parsePVFSData(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+
+	pvType, ok := inData[storageTypeKey]
+	if !ok {
+		return ""
+	}
+
+	if pvType != storageTypeNas {
+		return skipReportValue
+	}
+
+	return inData[inDataKey]
+}
+
+func parsePVLunData(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+
+	pvType, ok := inData[storageTypeKey]
+	if !ok {
+		return ""
+	}
+
+	if pvType != storageTypeSan {
+		return skipReportValue
+	}
+
+	return inData[inDataKey]
 }
 
 func parsePVStorageID(inDataKey, metricsName string, inData map[string]string) string {
@@ -118,15 +152,15 @@ func parsePVCapacityUsage(inDataKey, metricsName string, inData map[string]strin
 	if len(inData) == 0 {
 		return ""
 	}
-	pvType, ok := inData["sbcStorageType"]
+	pvType, ok := inData[storageTypeKey]
 	if !ok {
 		return ""
 	}
 	var pvCapacityUsage string
-	if pvType == "oceanstor-san" {
+	if pvType == storageTypeSan {
 		pvCapacityUsage = parseLunCapacityUsage(inDataKey, metricsName, inData)
 	}
-	if pvType == "oceanstor-nas" {
+	if pvType == storageTypeNas {
 		pvCapacityUsage = parseFilesystemCapacityUsage(inDataKey, metricsName, inData)
 	}
 	return pvCapacityUsage

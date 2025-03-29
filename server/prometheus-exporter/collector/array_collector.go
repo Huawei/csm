@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ func init() {
 const (
 	productModeString = "productModeString"
 	productMode       = "PRODUCTMODE"
+	productVersion    = "PRODUCTVERSION"
+	softwareVersion   = "SoftwareVersion"
 )
 
 var arrayObjectMetricsLabelMap = map[string][]string{
@@ -54,7 +56,7 @@ var arrayObjectLabelParseMap = map[string]parseRelation{
 	"endpoint": {"backendName", parseStorageData},
 	"sn":       {"ID", parseStorageData},
 	"model":    {"", parseArrayModel},
-	"version":  {"PRODUCTVERSION", parseStorageData},
+	"version":  {"", parseVersion},
 	"status":   {"", parseStorageStatus},
 	"object":   {"collectorName", parseStorageData},
 }
@@ -67,6 +69,23 @@ func parseArrayModel(inDataKey, metricsName string, inData map[string]string) st
 		modelName = StorageProductMode[inData[productMode]]
 	}
 	return modelName
+}
+
+func parseVersion(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+
+	var version string
+	if inData[softwareVersion] != "" {
+		// v7 storage production version field
+		version = inData[softwareVersion]
+	} else if inData[productVersion] != "" {
+		// v6 or earlier storage production version field
+		version = inData[productVersion]
+	}
+
+	return version
 }
 
 // ArrayCollector implements the prometheus.Collector interface and build storage array info

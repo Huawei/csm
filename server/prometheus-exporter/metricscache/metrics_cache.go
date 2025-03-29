@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package metricscache
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"strings"
 
 	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
@@ -59,20 +59,21 @@ func (metricsDataCache *MetricsDataCache) SetBatchDataFromSource(ctx context.Con
 	for collectorName, metricsIndicators := range params {
 		metricsData, ok := metricsDataCache.CacheDataMap[collectorName]
 		if !ok {
-			log.AddContext(ctx).Errorf("set %s cache data error, the monitorType : %s",
+			log.AddContext(ctx).Errorf("get [%s] metrics data failed with monitorType [%s]",
 				collectorName, monitorType)
 			continue
 		}
 		// if the collectorName already set we not set again
 		metricsDataResponse := metricsData.GetMetricsDataResponse()
-		if ok && metricsDataResponse != nil {
-			log.AddContext(ctx).Debugf("the Metrics data of %s response already get.", collectorName)
+		if metricsDataResponse != nil {
+			log.AddContext(ctx).Debugf("the metrics data of %s response is already got", collectorName)
 			continue
 		}
 
 		err := metricsData.SetMetricsData(ctx, collectorName, monitorType, metricsIndicators)
 		if err != nil {
-			log.AddContext(ctx).Errorf("set metricsData for %s error, the err is : %v", collectorName, err)
+			log.AddContext(ctx).Errorf("set metrics data for %s failed, err is [%v], try to collect next data",
+				collectorName, err)
 			continue
 		}
 	}
@@ -89,7 +90,8 @@ func (metricsDataCache *MetricsDataCache) MergeBatchData(ctx context.Context) {
 	for mergeMetricsName, mergeMetricsClass := range metricsDataCache.MergeMetrics {
 		err := mergeMetricsClass.MergeData(ctx, metricsDataCache)
 		if err != nil {
-			log.AddContext(ctx).Errorf("can not MergeData the mergeMetricsName is %s", mergeMetricsName)
+			log.AddContext(ctx).Errorf("can not merge [%s] metrics data, err is [%v], try to merge next",
+				mergeMetricsName, err)
 		}
 	}
 	log.AddContext(ctx).Infoln("merge metrics data success")
@@ -101,23 +103,25 @@ func (metricsDataCache *MetricsDataCache) buildPVBatchParams(ctx context.Context
 		batchParams = make(map[string][]string)
 	}
 
-	metricsIndicators, ok := params["pv"]
+	indicators, ok := params["pv"]
 	if !ok {
-		return errors.New("not need build pv class")
-	}
-	if monitorType == "performance" && (len(metricsIndicators) == 0 || metricsIndicators[0] == "") {
-		log.AddContext(ctx).Errorf("the pv metricsIndicators is error")
-		return errors.New("not need build pv class")
+		log.AddContext(ctx).Debugf("no need to build pv class with params [%v]", params)
+		return nil
 	}
 
 	if monitorType == "performance" {
-		metricsIndicatorsList := strings.Split(metricsIndicators[0], ",")
-		for _, metrics := range metricsIndicatorsList {
-			metricsPerformance, exits := pvPerformanceMap[metrics]
+		if len(indicators) == 0 || indicators[0] == "" {
+			return fmt.Errorf("pv indicators [%v] are invalid with performance metrics type", indicators)
+		}
+
+		indicatorsList := strings.Split(indicators[0], ",")
+		for _, metrics := range indicatorsList {
+			metricsIndicators, exits := pvPerformanceMap[metrics]
 			if !exits {
+				log.AddContext(ctx).Warningf("pv indiscator [%v] is invalid with performance metrics type", metrics)
 				continue
 			}
-			batchParams[metrics] = metricsPerformance
+			batchParams[metrics] = metricsIndicators
 		}
 	} else {
 		batchParams["lun"] = []string{""}
@@ -132,13 +136,15 @@ func (metricsDataCache *MetricsDataCache) buildPVClass(ctx context.Context,
 	if batchParams == nil {
 		batchParams = make(map[string][]string)
 	}
+
 	metricsIndicators, ok := params["pv"]
 	if !ok {
 		return
 	}
+
 	err := metricsDataCache.buildPVBatchParams(ctx, monitorType, params, batchParams)
 	if err != nil {
-		log.AddContext(ctx).Debugln("not need build pv class")
+		log.AddContext(ctx).Errorf("build pv batch params failed, err is [%v]", err)
 		return
 	}
 
@@ -150,7 +156,7 @@ func (metricsDataCache *MetricsDataCache) buildPVClass(ctx context.Context,
 
 	mergeDataType, err := mergeFunc(metricsDataCache.BackendName, monitorType, "pv", metricsIndicators)
 	if err != nil {
-		log.AddContext(ctx).Errorf("can not get pv mergeDataType")
+		log.AddContext(ctx).Errorf("can not get pv mergeDataType, err is [%v]", err)
 		return
 	}
 	metricsDataCache.MergeMetrics["pv"] = mergeDataType

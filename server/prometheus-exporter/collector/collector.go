@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -103,15 +103,21 @@ func (baseCollector *BaseCollector) setPrometheusMetric(ctx context.Context, ch 
 	// parse metricsValue
 	metricsValue := metricsParseRelation.parseFunc(
 		metricsParseRelation.parseKey, metricsName, detailData)
+	if metricsValue == skipReportValue {
+		return
+	}
+
 	metricsValueFloat, err := strconv.ParseFloat(metricsValue, bitSize)
 	if err != nil {
-		log.AddContext(ctx).Debugf("can not get the metricsValueFloat the metricsName is [%v]", metricsName)
+		log.AddContext(ctx).Errorf("can not get the metricsValueFloat, "+
+			"the metricsName is [%v], the origin value is [%s], err is [%v], detail is [%v]",
+			metricsName, metricsValue, err, detailData)
 		return
 	}
 	// parse metricsLabel, from label key get label value
 	labelKeys, ok := baseCollector.metricsLabelMap[metricsName]
 	if !ok {
-		log.AddContext(ctx).Warningln("can not get the labelKeys")
+		log.AddContext(ctx).Warningf("can not get the labelKeys of %s", metricsName)
 		return
 	}
 	labelValueSlice := parseLabelListToLabelValueSlice(

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,6 +31,10 @@ const (
 	unlimitedPrecision        = -1
 	precisionOfTwo            = 2
 	precisionOfFour           = 4
+	skipReportValue           = "skipReportValue"
+	storageTypeSan            = "oceanstor-san"
+	storageTypeNas            = "oceanstor-nas"
+	storageTypeKey            = "sbcStorageType"
 )
 
 type metricsParseFunc func(inDataKey, metricsName string, inData map[string]string) string

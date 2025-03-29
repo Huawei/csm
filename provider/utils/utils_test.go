@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -114,5 +114,40 @@ func Test_StructToMap_Success(t *testing.T) {
 	// assert
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Test_StructToMap_Success() = %v, want %v", got, want)
+	}
+}
+
+func Test_CompareVersions(t *testing.T) {
+	// arrange
+	tests := []struct {
+		name string
+		v1   string
+		v2   string
+		want int
+	}{
+		{name: "compare 6.1.9 and 6.1.10", v1: "6.1.9", v2: "6.1.10", want: -1},
+		{name: "compare 6.1.10 and 6.1.10", v1: "6.1.10", v2: "6.1.10", want: 0},
+		{name: "compare 6.1.10 and 6.1.9", v1: "6.1.10", v2: "6.1.9", want: 1},
+		{name: "compare 6.2.0 and 6.1.9999", v1: "6.2.0", v2: "6.1.9999", want: 1},
+		{name: "compare 6.1.9999 and 6.2.0", v1: "6.1.9999", v2: "6.2.0", want: -1},
+		{name: "compare 7.0.0 and 6.9.9", v1: "7.0.0", v2: "6.9.9", want: 1},
+		{name: "compare 6.9.9 and 7.0.0", v1: "6.9.9", v2: "7.0.0", want: -1},
+		{name: "compare 6.1.8 and 6.1.8.SPH001", v1: "6.1.8", v2: "6.1.8.SPH001", want: -1},
+		{name: "compare 6.1.8.SPH001 and 6.1.8", v1: "6.1.8.SPH001", v2: "6.1.8", want: 1},
+		{name: "compare 6.1.8.SPH002 and 6.1.8.SPH001", v1: "6.1.8.SPH002", v2: "6.1.8.SPH001", want: 1},
+		{name: "compare 6.1.8.SPH001 and 6.1.8.SPH002", v1: "6.1.8.SPH001", v2: "6.1.8.SPH002", want: -1},
+		{name: "compare 6.1.8.SPH001 and 6.1.8.SPH001", v1: "6.1.8.SPH001", v2: "6.1.8.SPH001", want: 0},
+		{name: "compare 7.0 and 6.9.9", v1: "7.0", v2: "6.9.9", want: 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// action
+			got := CompareVersions(tt.v1, tt.v2)
+
+			// assert
+			if got != tt.want {
+				t.Errorf("CompareVersions() got = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

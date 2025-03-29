@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package metricscache
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/huawei/csm/v2/utils/log"
 )
@@ -44,11 +45,13 @@ func (metricsData *MetricsPVData) SetMetricsData(ctx context.Context,
 	collectorName, monitorType string, metricsIndicators []string) error {
 	log.AddContext(ctx).Infof("start to get pv metrics data with collector name: %v, monitor type: %v, "+
 		"indicators: %v", collectorName, monitorType, metricsIndicators)
+
 	// get PV data
 	batchCollectResponse, err := GetAndParsePVInfo(ctx, metricsData.BackendName, metricsData.MetricsType)
 	if err != nil {
-		return err
+		return fmt.Errorf("get pv info failed, err is [%w]", err)
 	}
+
 	metricsData.MetricsDataResponse = batchCollectResponse
 	log.AddContext(ctx).Infoln("get pv metrics data success")
 	return nil

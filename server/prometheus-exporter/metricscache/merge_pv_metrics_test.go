@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package metricscache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -95,8 +96,7 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetPvDataFailed(t *testing
 	metricsDataCache := &MetricsDataCache{}
 	mergePVMetricsData := &MergePVMetricsData{}
 
-	getPvErr := fmt.Errorf("can not get the pv data when merge")
-	wantErr := getPvErr
+	wantErr := fmt.Errorf("can not get the pv data when merge")
 
 	// action
 	gotRes, gotErr := mergePVMetricsData.mergeKubePVAndStorageInfo(ctx, storageNameKey, pvNameKey,
@@ -123,8 +123,7 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetStorageDataFailed(t *te
 	metricsDataCache := &MetricsDataCache{}
 	mergePVMetricsData := &MergePVMetricsData{}
 
-	getStorageErr := fmt.Errorf("can not get the storage data when merge")
-	wantErr := getStorageErr
+	wantErr := errors.New("can not get the storage data when merge")
 
 	// mock
 	p := gomonkey.NewPatches()
@@ -155,7 +154,6 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetStorageDataFailed(t *te
 
 func TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess(t *testing.T) {
 	// arrange
-	ctx := context.TODO()
 	indicator1 := "indicator1"
 	indicator2 := "indicator2"
 	mergePVMetricsData := &MergePVMetricsData{BaseMergeMetricsData: &BaseMergeMetricsData{
@@ -167,7 +165,7 @@ func TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess(t *testing.T) {
 	wantList := []string{indicator1, indicator2}
 
 	// action
-	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams(ctx)
+	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams()
 
 	// assert
 	if !reflect.DeepEqual(gotKey, wantKey) {
@@ -186,7 +184,6 @@ func TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess(t *testing.T) {
 
 func TestMergePVMetricsData_getPVMergeParams_ObjectSuccess(t *testing.T) {
 	// arrange
-	ctx := context.TODO()
 	mergePVMetricsData := &MergePVMetricsData{BaseMergeMetricsData: &BaseMergeMetricsData{
 		monitorType:     "object",
 		mergeIndicators: nil,
@@ -196,7 +193,7 @@ func TestMergePVMetricsData_getPVMergeParams_ObjectSuccess(t *testing.T) {
 	wantList := []string{"lun", "filesystem"}
 
 	// action
-	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams(ctx)
+	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams()
 
 	// assert
 	if !reflect.DeepEqual(gotKey, wantKey) {
@@ -215,7 +212,6 @@ func TestMergePVMetricsData_getPVMergeParams_ObjectSuccess(t *testing.T) {
 
 func TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed(t *testing.T) {
 	// arrange
-	ctx := context.TODO()
 	mergePVMetricsData := &MergePVMetricsData{BaseMergeMetricsData: &BaseMergeMetricsData{
 		backendName:     "",
 		monitorType:     "performance",
@@ -229,7 +225,7 @@ func TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed(t *testing.T) 
 	var wantIndicators []string
 
 	// action
-	gotKey, gotIndicators, gotErr := mergePVMetricsData.getPVMergeParams(ctx)
+	gotKey, gotIndicators, gotErr := mergePVMetricsData.getPVMergeParams()
 
 	// assert
 	if !reflect.DeepEqual(gotErr, wantErr) {
@@ -295,7 +291,7 @@ func TestMergePVMetricsData_MergeData_GetParamsFailed(t *testing.T) {
 	}}
 	mergePVMetricsData := &MergePVMetricsData{}
 	getParamsErr := fmt.Errorf("get merge params err")
-	wantErr := getParamsErr
+	wantErr := fmt.Errorf("can not get pv merge params, err is [%w]", getParamsErr)
 
 	// mock
 	p := gomonkey.NewPatches()
@@ -393,7 +389,7 @@ func TestMergePVMetricsData_MergeData_GetMetricsDetailsFailed(t *testing.T) {
 		"pv": pvCacheData,
 	}}
 	mergePVMetricsData := &MergePVMetricsData{}
-	getMetricsDetailsErr := fmt.Errorf("can not get  MetricsDataResponse.Details when MergePVAndStorageData")
+	getMetricsDetailsErr := fmt.Errorf("can not get MetricsDataResponse.Details when MergePVAndStorageData")
 	wantErr := getMetricsDetailsErr
 
 	// mock
@@ -430,7 +426,6 @@ func TestMergePVMetricsData_MergeData_MergeFailed(t *testing.T) {
 	}}
 	mergePVMetricsData := &MergePVMetricsData{}
 	mergeErr := fmt.Errorf("merge pv and storage info error")
-	wantErr := mergeErr
 
 	// mock
 	p := gomonkey.NewPatches()
@@ -453,9 +448,9 @@ func TestMergePVMetricsData_MergeData_MergeFailed(t *testing.T) {
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
+	if gotErr != nil {
 		t.Errorf("TestMergePVMetricsData_MergeData_MergeFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
+			"gotErr [%v], wantErr [%v]", gotErr, nil)
 	}
 
 	// cleanup

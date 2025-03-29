@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package exporterhandler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
@@ -66,12 +68,13 @@ func Test_checkMetricsObject_PerformanceIndicatorsError(t *testing.T) {
 	// arrange
 	ctx := context.TODO()
 	mockParams := map[string][]string{"array": {""}}
+	wantErr := fmt.Errorf("can not get the [%s] performance indicators", "array")
 
 	// action
 	err := checkMetricsObject(ctx, mockParams, "performance")
 
 	// assert
-	if err.Error() != "the metricsIndicators is error" {
-		t.Errorf("checkMetricsObject() error the err is [%v]", err)
+	if !reflect.DeepEqual(err, wantErr) {
+		t.Errorf("checkMetricsObject() error the err is [%v], want err is [%v]", err, wantErr)
 	}
 }

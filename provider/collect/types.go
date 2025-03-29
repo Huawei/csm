@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ type ArrayObject struct {
 	ProductModeString string `json:"productModeString" metrics:"productModeString"`
 	ProductMode       string `json:"PRODUCTMODE" metrics:"PRODUCTMODE"`
 	ProductVersion    string `json:"PRODUCTVERSION" metrics:"PRODUCTVERSION"`
+	SoftwareVersion   string `json:"SoftwareVersion" metrics:"SoftwareVersion"`
 	HealthStatus      string `json:"HEALTHSTATUS" metrics:"HEALTHSTATUS"`
 	RunningStatus     string `json:"RUNNINGSTATUS" metrics:"RUNNINGSTATUS"`
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ func getPVDataFromApi(ctx context.Context) []coreV1.PersistentVolume {
 		VolumeList, err := usedClientSet.KubeClient.CoreV1().PersistentVolumes().List(
 			ctx, metaV1.ListOptions{Limit: getPVLimit, Continue: continueKey})
 		if err != nil {
-			log.AddContext(ctx).Errorln("can not get pv list")
+			log.AddContext(ctx).Errorf("can not get pv list, err is [%v]", err)
 			break
 		}
 		allVolumeItems = append(allVolumeItems, VolumeList.Items...)
@@ -92,6 +92,7 @@ func getAllBackendFromApi(ctx context.Context) map[string]map[string]string {
 	allBackend, err := usedClientSet.SbcClient.XuanwuV1().StorageBackendClaims(
 		exporterConfig.GetStorageBackendNamespace()).List(ctx, metaV1.ListOptions{})
 	if err != nil {
+		log.AddContext(ctx).Errorf("can not get sbc list, err is [%v]", err)
 		return nil
 	}
 	allBackendInfo := parseAllBackendInfo(allBackend)
@@ -99,7 +100,7 @@ func getAllBackendFromApi(ctx context.Context) map[string]map[string]string {
 
 }
 
-func buildOutPVData(backendName, collectType string, allSBCInfo map[string]map[string]string,
+func buildOutPVData(ctx context.Context, backendName, collectType string, allSBCInfo map[string]map[string]string,
 	allPVData []coreV1.PersistentVolume) *storageGRPC.CollectResponse {
 	outPVData := &storageGRPC.CollectResponse{
 		BackendName: backendName,
@@ -113,6 +114,7 @@ func buildOutPVData(backendName, collectType string, allSBCInfo map[string]map[s
 			setPVNameMetrics(pvData).
 			setPVCNameMetrics(pvData)
 		if pvMapInfo.parseError != nil {
+			log.AddContext(ctx).Debugf("parse pv [%s] data failed, err is [%v]", pvData.Name, pvMapInfo.parseError)
 			continue
 		}
 		pvBackendName, ok := pvMapInfo.collectDetail.Data["sbcName"]
@@ -137,15 +139,14 @@ func buildOutPVData(backendName, collectType string, allSBCInfo map[string]map[s
 func GetAndParsePVInfo(ctx context.Context, backendName, collectType string) (*storageGRPC.CollectResponse, error) {
 	allPVData := getPVDataFromApi(ctx)
 	if len(allPVData) == 0 {
-		log.AddContext(ctx).Warningln("can not get pv data, pv is empty")
 		return nil, errors.New("can not get pv data, pv is empty")
 	}
+
 	allSBCInfo := getAllBackendFromApi(ctx)
 	if len(allSBCInfo) == 0 {
-		log.AddContext(ctx).Warningln("can not get sbc data, sbc is empty")
 		return nil, errors.New("can not get sbc data, sbc is empty")
 	}
 
-	outPVData := buildOutPVData(backendName, collectType, allSBCInfo, allPVData)
+	outPVData := buildOutPVData(ctx, backendName, collectType, allSBCInfo, allPVData)
 	return outPVData, nil
 }

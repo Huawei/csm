@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package metricscache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
@@ -44,15 +45,14 @@ func NewMergePVMetricsData(backendName, monitorType, metricsType string,
 }
 
 func (mergePVMetricsData *MergePVMetricsData) mergeKubePVAndStorageInfo(ctx context.Context,
-	storageNameKey, pvNameKey, storageType string, pvCacheData []*storageGRPC.CollectDetail,
+	storageNameKey, pvNameKey, volumeType string, pvCacheData []*storageGRPC.CollectDetail,
 	metricsDataCache *MetricsDataCache) (map[string]map[string]string, error) {
 	if len(pvCacheData) == 0 {
-		log.AddContext(ctx).Warningln("can not get the pv data when merge")
 		return nil, errors.New("can not get the pv data when merge")
 	}
-	storageCacheData := metricsDataCache.GetMetricsData(storageType)
+
+	storageCacheData := metricsDataCache.GetMetricsData(volumeType)
 	if storageCacheData == nil || len(storageCacheData.Details) == 0 {
-		log.AddContext(ctx).Warningln("can not get the storage data when merge")
 		return nil, errors.New("can not get the storage data when merge")
 	}
 
@@ -61,10 +61,12 @@ func (mergePVMetricsData *MergePVMetricsData) mergeKubePVAndStorageInfo(ctx cont
 		if pvData.Data[pvNameKey] == "" {
 			continue
 		}
+
 		storageTypeName, storageTypeExit := pvData.Data["sbcStorageType"]
-		if storageTypeExit && storageTypeMap[storageTypeName] != storageType {
+		if storageTypeExit && storageTypeMap[storageTypeName] != volumeType {
 			continue
 		}
+
 		pvCacheDataMap[pvData.Data[pvNameKey]] = pvData.Data
 	}
 
@@ -92,12 +94,11 @@ func (mergePVMetricsData *MergePVMetricsData) mergeKubePVAndStorageInfo(ctx cont
 	return resultMerge, nil
 }
 
-func (mergePVMetricsData *MergePVMetricsData) getPVMergeParams(ctx context.Context) (string, []string, error) {
+func (mergePVMetricsData *MergePVMetricsData) getPVMergeParams() (string, []string, error) {
 	var metricsIndicatorsList []string
 	var storageNameKey string
 	if mergePVMetricsData.monitorType == "performance" && len(mergePVMetricsData.mergeIndicators) == 0 {
 		errorStr := "when get pv merge params, the monitorType is performance but mergeIndicators is empty"
-		log.AddContext(ctx).Errorln(errorStr)
 		return storageNameKey, metricsIndicatorsList, errors.New(errorStr)
 	}
 
@@ -110,7 +111,6 @@ func (mergePVMetricsData *MergePVMetricsData) getPVMergeParams(ctx context.Conte
 	}
 	if len(metricsIndicatorsList) == 0 {
 		errorStr := "when get pv merge params, the metricsIndicatorsList is empty"
-		log.AddContext(ctx).Errorln(errorStr)
 		return storageNameKey, metricsIndicatorsList, errors.New(errorStr)
 	}
 
@@ -121,36 +121,34 @@ func (mergePVMetricsData *MergePVMetricsData) getPVMergeParams(ctx context.Conte
 func (mergePVMetricsData *MergePVMetricsData) MergeData(ctx context.Context,
 	metricsDataCache *MetricsDataCache) error {
 	log.AddContext(ctx).Infoln("start to merge pv and storage data")
-	storageNameKey, metricsIndicatorsList, err := mergePVMetricsData.getPVMergeParams(ctx)
+	storageNameKey, metricsIndicatorsList, err := mergePVMetricsData.getPVMergeParams()
 	if err != nil {
-		log.AddContext(ctx).Errorln("can not get pv merge params, the error is %v", err)
-		return err
+		return fmt.Errorf("can not get pv merge params, err is [%w]", err)
 	}
 
 	pvCacheData, ok := metricsDataCache.CacheDataMap["pv"]
 	if !ok {
-		log.AddContext(ctx).Errorln("can not get pv cache data when MergePVAndStorageData")
 		return errors.New("can not get pv cache data when MergePVAndStorageData")
 	}
 
 	pvMetricsDataResponse := pvCacheData.GetMetricsDataResponse()
 	if pvMetricsDataResponse == nil {
-		log.AddContext(ctx).Errorln("can not get pv MetricsDataResponse when MergePVAndStorageData")
 		return errors.New("can not get MetricsDataResponse data when MergePVAndStorageData")
 	}
 
 	if len(pvMetricsDataResponse.Details) == 0 {
-		log.AddContext(ctx).Errorln("can not get pv MetricsDataResponse.Details when MergePVAndStorageData")
-		return errors.New("can not get  MetricsDataResponse.Details when MergePVAndStorageData")
+		return errors.New("can not get MetricsDataResponse.Details when MergePVAndStorageData")
 	}
 
 	pvTempData := pvMetricsDataResponse.Details
 	pvMetricsDataResponse.Details = nil
-	for _, storageTypeName := range metricsIndicatorsList {
+	for _, volumeType := range metricsIndicatorsList {
 		mergeMapData, err := mergePVMetricsData.mergeKubePVAndStorageInfo(
-			ctx, storageNameKey, "storageName", storageTypeName, pvTempData, metricsDataCache)
+			ctx, storageNameKey, "storageName", volumeType, pvTempData, metricsDataCache)
 		if err != nil {
-			return err
+			log.AddContext(ctx).Errorf("merge pv metricsData of [%s] failed, "+
+				"err is [%v], try to merge next data", volumeType, err)
+			continue
 		}
 		for _, value := range mergeMapData {
 			_, ok := value["pvName"]

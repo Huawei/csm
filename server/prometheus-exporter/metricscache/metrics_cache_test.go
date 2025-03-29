@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -152,15 +152,14 @@ func TestMetricsDataCache_buildPVBatchParams_GetIndicatorsFail(t *testing.T) {
 	monitorType := "performance"
 	params := map[string][]string{}
 	batchParams := make(map[string][]string)
-	wantErr := fmt.Errorf("not need build pv class")
 
 	// action
 	gotErr := metricsDataCache.buildPVBatchParams(ctx, monitorType, params, batchParams)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
+	if gotErr != nil {
 		t.Errorf("TestMetricsDataCache_buildPVBatchParams_GetIndicatorsFail failed, "+
-			"gotRes [%v], wantRes [%v]", gotErr, wantErr)
+			"gotErr [%v], wantErr [nil]", gotErr)
 	}
 
 }
@@ -172,7 +171,7 @@ func TestMetricsDataCache_buildPVBatchParams_EmptyIndicatorsFail(t *testing.T) {
 	monitorType := "performance"
 	params := map[string][]string{"pv": {}}
 	batchParams := make(map[string][]string)
-	wantErr := fmt.Errorf("not need build pv class")
+	wantErr := fmt.Errorf("pv indicators [%v] are invalid with performance metrics type", params["pv"])
 
 	// action
 	gotErr := metricsDataCache.buildPVBatchParams(ctx, monitorType, params, batchParams)

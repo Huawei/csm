@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ const (
 	defaultCmiAddress        = "/cmi/cmi.sock"
 	minSupportResourceNum    = 2
 	defaultCSIDriverName     = "csi.huawei.com"
+	defaultCSINamespace      = "huawei-csi"
 	minResyncPeriod          = 5 * time.Minute
 )
 
@@ -59,6 +60,7 @@ type option struct {
 	cmiAddress        string
 	controllerWorkers int
 	csiDriverName     string
+	backendNamespace  string
 }
 
 // GetName return the name string of the ControllerOption
@@ -93,6 +95,7 @@ func (o *option) AddFlags(fs *pflag.FlagSet) {
 		"The socket address of container monitoring interface.")
 	fs.StringVar(&o.csiDriverName, confConsts.CSIDriverName, defaultCSIDriverName,
 		"The CSI driver name.")
+	fs.StringVar(&o.backendNamespace, "backend-namespace", defaultCSINamespace, "Namespace of backend.")
 }
 
 // ValidateConfig is to validate input resource topology controller configurations
@@ -179,7 +182,12 @@ func GetCmiAddress() string {
 	return Option.cmiAddress
 }
 
-// GetCSIDriverName returns the storage backend namespace
+// GetCSIDriverName returns the csi driver name
 func GetCSIDriverName() string {
 	return Option.csiDriverName
+}
+
+// GetBackendNamespace returns the storage backend namespace
+func GetBackendNamespace() string {
+	return Option.backendNamespace
 }

@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package utils
 import (
 	"fmt"
 
+	sbcClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
 	apiV1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -38,6 +39,7 @@ type ClientsSet struct {
 	CmiClient        *cmiGrpc.ClientSet
 	KubeClient       kubernetes.Interface
 	XuanwuClient     xuanwuClient.Interface
+	SbcClient        sbcClient.Interface
 	DynamicClient    dynamic.Interface
 	EventBroadcaster record.EventBroadcaster
 	EventRecorder    record.EventRecorder
@@ -52,6 +54,7 @@ var (
 	initFuncList = []func(*ClientsSet) error{
 		initKubeClient,
 		initXuanwuClient,
+		initSbcClient,
 		initDynamicClient,
 		initEventBroadcaster,
 		initEventRecorder,
@@ -200,5 +203,22 @@ func initCmiClient(c *ClientsSet) error {
 	c.CmiClient = cmiClientSet
 
 	log.Infoln("initial cmi client success")
+	return nil
+}
+
+func initSbcClient(c *ClientsSet) error {
+	log.Infoln("initial sbc client")
+	defer log.Infoln("initial sbc client success")
+	if c.SbcClient != nil {
+		return nil
+	}
+
+	client, err := sbcClient.NewForConfig(c.Config)
+	if err != nil {
+		log.Errorf("init sbc client error: [%v]", err)
+		return err
+	}
+
+	c.SbcClient = client
 	return nil
 }

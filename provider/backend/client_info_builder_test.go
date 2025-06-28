@@ -23,6 +23,9 @@ import (
 	"reflect"
 	"testing"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/huawei/csm/v2/provider/constants"
 	"github.com/huawei/csm/v2/storage/constant"
 )
@@ -46,7 +49,7 @@ func TestClientInfoBuilder_WithVolumeType_Success(t *testing.T) {
 
 func TestClientInfoBuilder_WithVolumeType_UnsupportedErr(t *testing.T) {
 	// arrange
-	wantErr := errors.New("illegalArgumentError unsupported storage type")
+	wantErr := status.Errorf(codes.InvalidArgument, "illegalArgumentError unsupported storage type")
 	builder := &ClientInfoBuilder{
 		ctx:        context.Background(),
 		clientInfo: &ClientInfo{},

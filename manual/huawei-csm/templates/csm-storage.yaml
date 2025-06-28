@@ -133,7 +133,7 @@ spec:
         - name: liveness-probe
           args:
             - --cmi-address=/cmi/cmi.sock
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --healthz-port=9808
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=liveness-prob
@@ -221,6 +221,7 @@ spec:
             - --pod-retry-max-delay=1m
             - --resync-period=15m
             - --csi-driver-name=csi.huawei.com
+            - --backend-namespace=huawei-csi
             - --enable-leader-election=false
             - --leader-lease-duration=8s
             - --leader-renew-deadline=6s

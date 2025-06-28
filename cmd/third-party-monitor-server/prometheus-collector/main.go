@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/huawei/csm/v2/config"
+	"github.com/huawei/csm/v2/config/common"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
 	logConfig "github.com/huawei/csm/v2/config/log"
 	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
@@ -33,10 +34,9 @@ import (
 )
 
 const (
-	containerName    = "prometheus-collector"
-	namespaceEnv     = "NAMESPACE"
-	defaultNamespace = "huawei-csm"
-	versionCmName    = "huawei-csm-version"
+	containerName = "prometheus-collector"
+	namespaceEnv  = "NAMESPACE"
+	versionCmName = "huawei-csm-version"
 
 	healthz = "/healthz"
 
@@ -50,7 +50,7 @@ var prometheusExporter = &cobra.Command{
 }
 
 func main() {
-	manager := config.NewOptionManager(prometheusExporter.Flags(), logConfig.Option, exporterConfig.Option)
+	manager := config.NewOptionManager(prometheusExporter.Flags(), logConfig.Option, exporterConfig.Option, common.Option)
 	manager.AddFlags()
 
 	prometheusExporter.Run = func(cmd *cobra.Command, args []string) {
@@ -90,7 +90,7 @@ func verifyStartInfo() error {
 	}
 
 	err = version.InitVersionConfigMapWithName(containerName,
-		version.CsmPrometheusCollectorVersion, namespaceEnv, defaultNamespace, versionCmName)
+		version.CsmPrometheusCollectorVersion, namespaceEnv, common.GetNamespace(), versionCmName)
 	if err != nil {
 		log.Errorf("init version file error: [%v]", err)
 		return err

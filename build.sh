@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+#  Copyright (c) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ set -e
 workdir=$(cd $(dirname $0); pwd)
 
 # tmp dir is used to build binary files and images
-export TMP_DIR_PATH="${workdir}/eSDK_CSM_V${VER}_${PLATFORM}_64"
+export TMP_DIR_PATH="${workdir}/eSDK_Enterprise_Storage_CSM_V${VER}_${PLATFORM}_64"
 # release dir is used to assemble the release package
 release_dir_path="${workdir}/release"
 
@@ -104,8 +104,8 @@ chart_version=$(echo ${VER} | sed -e 's/\([0-9]\+\.[0-9]\+\.[0-9]\+\)\./\1-/')
 sed -i "s/{{version}}/${chart_version}/g" helm/huawei-csm/Chart.yaml
 
 # zip the release package and move it to workdir
-zip -rq -o eSDK_Huawei_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip ./*
-mv eSDK_Huawei_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip "${workdir}"
+zip -rq -o eSDK_Enterprise_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip ./*
+mv eSDK_Enterprise_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip "${workdir}"
 
 # cd to workdir to remove tmp files
 cd "${workdir}"

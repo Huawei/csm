@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2022-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -34,26 +34,41 @@ import (
 	"github.com/huawei/csm/v2/utils/resource"
 )
 
-// Login is used to login storage client
+const (
+	authenticationModeKey = "authenticationMode"
+	passwordKey           = "password"
+	authModeScopeLocal    = "0"
+)
+
+// backendLoginParams for login backend
+type backendLoginParams struct {
+	// password for log in backend
+	password []byte
+	// authentication, local:0, ldap:1
+	scope string
+}
+
+// Login is used to log in storage client
 func (c *CentralizedClient) Login(ctx context.Context) error {
 	log.AddContext(ctx).Infof("storage client login start, urls: %v", c.Urls)
-	password, err := c.getPasswordFromSecret(ctx)
+	params, err := c.getBackendLoginParamsFromSecret(ctx)
 	if err != nil {
+		log.AddContext(ctx).Errorf("get BackendLoginParams failed, err: %w", err)
 		return err
 	}
 
 	reqData := map[string]interface{}{
 		"username": c.User,
-		"password": string(password),
-		"scope":    "0",
+		"password": string(params.password),
+		"scope":    params.scope,
 	}
 
-	for i := range password {
-		password[i] = 0
+	for i := range params.password {
+		params.password[i] = 0
 	}
 
 	resp, err := c.loginCall(ctx, reqData)
-	reqData["password"] = ""
+	reqData[passwordKey] = ""
 	if err != nil {
 		log.AddContext(ctx).Errorf("storage client login error: %v", err)
 		return err
@@ -152,7 +167,6 @@ func (c *CentralizedClient) loginCall(ctx context.Context, reqData map[string]in
 	for _, url := range c.Urls {
 		c.Curl = url + "/deviceManager/rest"
 		log.AddContext(ctx).Infof("storage client try to login: %s", c.Curl)
-
 		resp, err := c.post(ctx, "/xx/sessions", reqData)
 		if err == nil {
 			return resp, err
@@ -164,13 +178,12 @@ func (c *CentralizedClient) loginCall(ctx context.Context, reqData map[string]in
 	return nil, errors.New("storage client all url connect error")
 }
 
-func (c *CentralizedClient) getPasswordFromSecret(ctx context.Context) ([]byte, error) {
+// getPasswordFromSecret is used to get password and authMode from secret
+func (c *CentralizedClient) getBackendLoginParamsFromSecret(ctx context.Context) (*backendLoginParams, error) {
 	secret, err := resource.Instance().GetSecret(c.SecretName, c.SecretNamespace)
 	if err != nil && !apiErrors.IsNotFound(err) {
-		msg := fmt.Sprintf("storage client get secret with name %s and namespace %s failed, error: %v",
+		return nil, fmt.Errorf("storage client get secret with name %s and namespace %s failed, error: %w",
 			c.SecretName, c.SecretNamespace, err)
-		log.AddContext(ctx).Errorln(msg)
-		return nil, errors.New(msg)
 	}
 
 	// when the sbc change the password by using oceanctl, the secret of sbc will be changed.
@@ -178,33 +191,31 @@ func (c *CentralizedClient) getPasswordFromSecret(ctx context.Context) ([]byte, 
 	if apiErrors.IsNotFound(err) {
 		log.AddContext(ctx).Infof("secret [%s/%s] not found, try to get new one from sbc dynamically",
 			c.SecretNamespace, c.SecretName)
-
 		secret, err = c.getSecretFromSbcDynamically(ctx)
 		if err != nil {
-			err = fmt.Errorf("get secret from sbc dynamiclly failed, error is [%v]", err)
-			log.AddContext(ctx).Errorln(err)
-			return nil, err
+			return nil, fmt.Errorf("get secret from sbc dynamiclly failed, error is [%w]", err)
 		}
-
 		log.AddContext(ctx).Infof("get secret [%s/%s] from sbc dynamically", secret.Namespace, secret.Name)
 	}
 
 	if secret == nil || secret.Data == nil {
-		msg := fmt.Sprintf("storage client get secret with name %s and namespace %s, "+
-			"secret is nil or the data not exist in secret", c.SecretName, c.SecretNamespace)
-		log.AddContext(ctx).Errorln(msg)
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("secret is nil or the data not exist in secret, namespace: %s, secret name: %s",
+			c.SecretName, c.SecretNamespace)
 	}
 
-	password, exist := secret.Data["password"]
+	password, exist := secret.Data[passwordKey]
 	if !exist {
-		msg := fmt.Sprintf("storage client get secret with name %s and namespace %s, "+
-			"password field not exist in secret data", c.SecretName, c.SecretNamespace)
-		log.AddContext(ctx).Errorln(msg)
-		return nil, errors.New(msg)
+		return nil, fmt.Errorf("failed to query the password, namespace: %s, secret name: %s",
+			c.SecretName, c.SecretNamespace)
 	}
 
-	return password, nil
+	scope := authModeScopeLocal
+	authMode, exist := secret.Data[authenticationModeKey]
+	if exist {
+		scope = string(authMode)
+	}
+
+	return &backendLoginParams{password: password, scope: scope}, nil
 }
 
 func (c *CentralizedClient) getSecretFromSbcDynamically(ctx context.Context) (*coreV1.Secret, error) {

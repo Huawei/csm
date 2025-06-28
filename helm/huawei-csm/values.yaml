@@ -28,6 +28,14 @@ global:
   # Default value: true
   # This field will be inactive when it conflicts with the nodeSelector.
   balancedDeploy: true
+  # image pull policy for Huawei plugin container images, support [IfNotPresent, Always, Never]
+  pullPolicy: IfNotPresent
+  # Uses secrets to pull images from private container image registry or repository
+  imagePullSecrets: []
+  # Default installation namespace of the huawei-csm plugin
+  namespace: huawei-csm
+  # Namespace where the csiDriver is located
+  csiDriverNamespace: huawei-csi
 
 # all supported features
 features:
@@ -61,6 +69,29 @@ features:
     nodeSelector:
     # Uncomment if you wish the service scheduled to the node with Specific Labels
     #  kubernetes.io/hostname: ""
+    # Tolerations allow the scheduler to schedule pods with matching taints
+    tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 15
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 15
+    # affinity: constrain which nodes your Pod can be scheduled on based on node labels
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - csm-storage-service
+              topologyKey: kubernetes.io/hostname
+            weight: 100
 
   # storageTopo: allow to provision pv/pod to storage.
   storageTopo:
@@ -90,6 +121,29 @@ features:
     nodeSelector:
     # Uncomment if you wish the service scheduled to the node with Specific Labels
     #  kubernetes.io/hostname: ""
+    # Tolerations allow the scheduler to schedule pods with matching taints
+    tolerations:
+      - key: node.kubernetes.io/not-ready
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 15
+      - key: node.kubernetes.io/unreachable
+        operator: Exists
+        effect: NoExecute
+        tolerationSeconds: 15
+    # affinity: constrain which nodes your Pod can be scheduled on based on node labels
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - csm-prometheus-service
+              topologyKey: kubernetes.io/hostname
+            weight: 100
 
 cluster:
   name: "kubernetes"
@@ -100,8 +154,9 @@ images:
   containerMonitorInterface: csm-cmi:{{version}}
   livenessProbe: csm-liveness-probe:{{version}}
 
-# limits and requests of containers
+# Specify the amount of CPU and memory resources that a container requires
 containerResourcesSet:
+# To disable the default configuration, comment out the following section.
   prometheusService:
     livenessProbe:
       requests:
@@ -146,3 +201,20 @@ containerResourcesSet:
       limits:
         cpu: 300m
         memory: 512Mi
+
+# The parameter service used to configure dual-IP protocol stack.
+# ref: https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services
+service:
+  # ipFamilyPolicy: define csm-prometheus-service service IP policy
+  # Allowed values:
+  #   SingleStack: Single-stack service. The control plane allocates a cluster IP for the Service, using the first configured service cluster IP range.
+  #   PreferDualStack: Allocates both IPv4 and IPv6 cluster IPs for the Service when dual-stack is enabled. If dual-stack is not enabled or supported, it falls back to single-stack behavior.
+  #   RequireDualStack: Allocates Service .spec.clusterIPs from both IPv4 and IPv6 address ranges when dual-stack is enabled. If dual-stack is not enabled or supported, the Service API object creation fails.
+  # Default value: SingleStack
+  ipFamilyPolicy: SingleStack
+  # ipFamilies: indicate the list of supported IP protocols.
+  # Allowed values: the list of IP protocols, whose elements can contain only IPv4 and IPv6.
+  # Default value: -IPv4
+  ipFamilies:
+    - IPv4
+    # - IPv6

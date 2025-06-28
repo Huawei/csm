@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"context"
 
 	coreV1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apiXuanwuV1 "github.com/huawei/csm/v2/client/apis/xuanwu/v1"
 	"github.com/huawei/csm/v2/controller/utils/consts"
@@ -56,6 +57,17 @@ func (ctrl *Controller) deleteResourceTopology(ctx context.Context,
 			ctrl.podQueue.Add(tag.Namespace + "/" + tag.Name)
 			break
 		case consts.PersistentVolume:
+			pv, err := ctrl.kubeClient.CoreV1().PersistentVolumes().Get(ctx, tag.Name, metav1.GetOptions{})
+			if err != nil {
+				log.AddContext(ctx).Errorf("get pv [%s] failed, err is [%v]", tag.Name, err)
+				break
+			}
+
+			if err = ctrl.verifyPersistentVolumeValid(pv); err != nil {
+				log.AddContext(ctx).Infof("[%v], no need to add to queue", err)
+				break
+			}
+
 			ctrl.volumeQueue.Add(tag.Name)
 			break
 		default:

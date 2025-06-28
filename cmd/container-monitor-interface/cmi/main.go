@@ -27,6 +27,7 @@ import (
 
 	"github.com/huawei/csm/v2/config"
 	cmiConfig "github.com/huawei/csm/v2/config/cmi"
+	"github.com/huawei/csm/v2/config/common"
 	logConfig "github.com/huawei/csm/v2/config/log"
 	"github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	"github.com/huawei/csm/v2/provider/collect"
@@ -38,10 +39,9 @@ import (
 )
 
 const (
-	containerName    = "cmi-controller"
-	namespaceEnv     = "NAMESPACE"
-	defaultNamespace = "huawei-csm"
-	versionCmName    = "huawei-csm-version"
+	containerName = "cmi-controller"
+	namespaceEnv  = "NAMESPACE"
+	versionCmName = "huawei-csm-version"
 )
 
 var cmiService = &cobra.Command{
@@ -50,7 +50,7 @@ var cmiService = &cobra.Command{
 }
 
 func main() {
-	manager := config.NewOptionManager(cmiService.Flags(), logConfig.Option, cmiConfig.Option)
+	manager := config.NewOptionManager(cmiService.Flags(), logConfig.Option, cmiConfig.Option, common.Option)
 	manager.AddFlags()
 
 	cmiService.Run = func(cmd *cobra.Command, args []string) {
@@ -67,7 +67,7 @@ func main() {
 		}
 
 		err = version.InitVersionConfigMapWithName(containerName,
-			version.ContainerMonitorInterfaceVersion, namespaceEnv, defaultNamespace, versionCmName)
+			version.ContainerMonitorInterfaceVersion, namespaceEnv, common.GetNamespace(), versionCmName)
 		if err != nil {
 			log.Errorf("init version file error: [%v]", err)
 			return

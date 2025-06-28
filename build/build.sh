@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+#  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 set -e
 workdir=$(cd $(dirname $0); pwd)
 
-export PACKAGE_NAME="eSDK_${RELEASE_VER}_CSM_V${VER}_${PLATFORM}_64"
+export PACKAGE_NAME="eSDK_Enterprise_Storage_${RELEASE_VER}_CSM_V${VER}_${PLATFORM}_64"
 export GOPROXY=http://mirrors.tools.huawei.com/goproxy/
 export GOSUMDB=off
 # shellcheck disable=SC2164

@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2022-2022. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2022-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ func TestLoginThenSuccess(t *testing.T) {
 
 	secret := &coreV1.Secret{
 		Data: map[string][]byte{
-			"password": []byte{'1'},
+			passwordKey:           []byte{'1'},
+			authenticationModeKey: []byte("1"),
 		},
 	}
 	var coreCli *resource.Client

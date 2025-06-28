@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -18,8 +18,13 @@ package resourcetopology
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
+	sbcClientInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions/xuanwu/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -31,6 +36,7 @@ import (
 
 	apiXuanwuV1 "github.com/huawei/csm/v2/client/apis/xuanwu/v1"
 	controllerConfig "github.com/huawei/csm/v2/config/topology"
+	"github.com/huawei/csm/v2/controller/utils/consts"
 	cmiGrpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	xuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned"
 	xuanwuClientInformers "github.com/huawei/csm/v2/pkg/client/informers/externalversions/xuanwu/v1"
@@ -53,6 +59,8 @@ type Controller struct {
 
 	claimInformer informersCoreV1.PersistentVolumeClaimInformer
 
+	backendInformer sbcClientInformers.StorageBackendClaimInformer
+
 	podQueue    workqueue.RateLimitingInterface
 	podInformer informersCoreV1.PodInformer
 	podStore    cache.Store
@@ -67,6 +75,7 @@ type ControllerRequest struct {
 	VolumeInformer   informersCoreV1.PersistentVolumeInformer
 	ClaimInformer    informersCoreV1.PersistentVolumeClaimInformer
 	PodInformer      informersCoreV1.PodInformer
+	BackendInformer  sbcClientInformers.StorageBackendClaimInformer
 	ReSyncPeriod     time.Duration
 	EventRecorder    record.EventRecorder
 }
@@ -94,6 +103,7 @@ func NewController(request ControllerRequest) *Controller {
 		volumeQueue:      workqueue.NewRateLimitingQueueWithConfig(pvRateLimiter, volumeQueueConfig),
 		volumeInformer:   request.VolumeInformer,
 		claimInformer:    request.ClaimInformer,
+		backendInformer:  request.BackendInformer,
 		podQueue:         workqueue.NewRateLimitingQueueWithConfig(podRateLimiter, podQueueConfig),
 		podInformer:      request.PodInformer,
 		podStore:         cache.NewStore(cache.DeletionHandlingMetaNamespaceKeyFunc),
@@ -135,6 +145,14 @@ func (ctrl *Controller) addEventFunc() {
 			DeleteFunc: func(obj interface{}) { ctrl.enqueuePod(obj) },
 		},
 	)
+
+	ctrl.backendInformer.Informer().AddEventHandler(
+		cache.ResourceEventHandlerFuncs{
+			AddFunc:    func(obj interface{}) {},
+			UpdateFunc: func(oldObj, newObj interface{}) {},
+			DeleteFunc: func(obj interface{}) {},
+		},
+	)
 }
 
 func (ctrl *Controller) enqueueResourceTopology(obj interface{}) {
@@ -165,13 +183,8 @@ func (ctrl *Controller) enqueuePersistentVolume(obj interface{}) {
 	}
 
 	if pv, ok := obj.(*coreV1.PersistentVolume); ok {
-		if pv.Spec.CSI == nil {
-			log.Debugf("pv [%s] is not a csi pv, skip to next", pv.Name)
-			return
-		}
-
-		if pv.Spec.CSI.Driver != controllerConfig.GetCSIDriverName() {
-			log.Debugf("pv [%s] driver [%s] is not supported, skip to next", pv.Name, pv.Spec.CSI.Driver)
+		if err := ctrl.verifyPersistentVolumeValid(pv); err != nil {
+			log.Debugf("[%v], skip to next", err)
 			return
 		}
 
@@ -184,6 +197,34 @@ func (ctrl *Controller) enqueuePersistentVolume(obj interface{}) {
 		log.Infof("enqueued pv [%v] for sync", objName)
 		ctrl.volumeQueue.Add(objName)
 	}
+}
+
+func (ctrl *Controller) verifyPersistentVolumeValid(pv *coreV1.PersistentVolume) error {
+	if pv.Spec.CSI == nil {
+		return fmt.Errorf("pv [%s] is not a csi pv", pv.Name)
+	}
+
+	if pv.Spec.CSI.Driver != controllerConfig.GetCSIDriverName() {
+		return fmt.Errorf("pv [%s] driver [%s] is not supported", pv.Name, pv.Spec.CSI.Driver)
+	}
+
+	volumeHandle := pv.Spec.CSI.VolumeHandle
+	backendName := strings.SplitN(volumeHandle, ".", 2)[0]
+	backend, err := ctrl.backendInformer.Lister().StorageBackendClaims(
+		controllerConfig.GetBackendNamespace()).Get(backendName)
+	if err != nil {
+		return fmt.Errorf("get backend [%s] by pv [%s] failed, err is [%v]", backendName, pv.Name, err)
+	}
+
+	if backend.Status == nil {
+		return fmt.Errorf("backend [%s] is not initialized by csi", backendName)
+	}
+
+	if !slices.Contains(consts.SupportedType, backend.Status.StorageType) {
+		return fmt.Errorf("pv [%s] backend type [%v] is unsupported", pv.Name, backend.Status.StorageType)
+	}
+
+	return nil
 }
 
 func (ctrl *Controller) enqueuePod(obj interface{}) {
@@ -215,7 +256,8 @@ func (ctrl *Controller) Run(ctx context.Context, workers int, stopCh <-chan stru
 		ctrl.topologyInformer.Informer().HasSynced,
 		ctrl.volumeInformer.Informer().HasSynced,
 		ctrl.claimInformer.Informer().HasSynced,
-		ctrl.podInformer.Informer().HasSynced) {
+		ctrl.podInformer.Informer().HasSynced,
+		ctrl.backendInformer.Informer().HasSynced) {
 		log.AddContext(ctx).Errorln("cannot sync caches")
 		return
 	}
@@ -324,6 +366,11 @@ func (ctrl *Controller) handle(ctx context.Context, obj interface{},
 	}
 
 	if err = function(ctx, key); err != nil {
+		if status.Code(err) == codes.InvalidArgument {
+			queue.Forget(obj)
+			log.AddContext(ctx).Warningf("invalidArgument, handle key [%s] failed, error is [%v]", key, err)
+			return nil
+		}
 		queue.AddRateLimited(key)
 		return fmt.Errorf("handle key [%s] failed: [%s], requeuing key [%s]", key, err.Error(), key)
 	}

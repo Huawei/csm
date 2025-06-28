@@ -19,7 +19,9 @@ package backend
 
 import (
 	"context"
-	"errors"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/huawei/csm/v2/provider/constants"
 	"github.com/huawei/csm/v2/storage/client/centralizedstorage"
@@ -52,7 +54,7 @@ func (b *ClientInfoBuilder) WithVolumeType(storageType string) *ClientInfoBuilde
 
 	volumeType, ok := volumeTypes[storageType]
 	if !ok {
-		b.err = errors.New("illegalArgumentError unsupported storage type")
+		b.err = status.Errorf(codes.InvalidArgument, "illegalArgumentError unsupported storage type")
 	}
 	b.clientInfo.VolumeType = volumeType
 	return b

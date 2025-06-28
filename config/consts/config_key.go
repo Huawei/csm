@@ -67,6 +67,8 @@ const (
 	CSIDriverName = "csi-driver-name"
 	// UseHttps the option to use https or not
 	UseHttps = "use-https"
+	// CSMNamespace the namespace of csm
+	CSMNamespace = "csm-namespace"
 )
 
 const (

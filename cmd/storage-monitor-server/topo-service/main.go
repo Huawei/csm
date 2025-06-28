@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"os"
 	"syscall"
 
+	sbcInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	k8sInformers "k8s.io/client-go/informers"
@@ -27,6 +28,7 @@ import (
 
 	"github.com/huawei/csm/v2/config"
 	clientConfig "github.com/huawei/csm/v2/config/client"
+	"github.com/huawei/csm/v2/config/common"
 	leaderElectionConfig "github.com/huawei/csm/v2/config/leaderelection"
 	logConfig "github.com/huawei/csm/v2/config/log"
 	controllerConfig "github.com/huawei/csm/v2/config/topology"
@@ -40,7 +42,6 @@ import (
 )
 
 const (
-	defaultNamespace     = "huawei-csm"
 	containerName        = "topo-service"
 	leaderLockObjectName = "resource-topology"
 	namespaceEnv         = "NAMESPACE"
@@ -54,7 +55,7 @@ var topoService = &cobra.Command{
 
 func main() {
 	manager := config.NewOptionManager(topoService.Flags(),
-		logConfig.Option, controllerConfig.Option, leaderElectionConfig.Option, clientConfig.Option)
+		logConfig.Option, controllerConfig.Option, leaderElectionConfig.Option, clientConfig.Option, common.Option)
 	manager.AddFlags()
 
 	topoService.Run = func(cmd *cobra.Command, args []string) {
@@ -71,7 +72,7 @@ func main() {
 		}
 
 		err = version.InitVersionConfigMapWithName(containerName,
-			version.CsmTopoServiceVersion, namespaceEnv, defaultNamespace, versionCmName)
+			version.CsmTopoServiceVersion, namespaceEnv, common.GetNamespace(), versionCmName)
 		if err != nil {
 			log.Errorf("init version file error: [%v]", err)
 			return
@@ -130,6 +131,7 @@ func newLeaderElectionParams() *leaderElection.Params {
 func runController(ctx context.Context, clients *utils.ClientsSet, ch chan os.Signal) {
 	factory := informers.NewSharedInformerFactory(clients.XuanwuClient, controllerConfig.GetResyncPeriod())
 	k8sFactory := k8sInformers.NewSharedInformerFactory(clients.KubeClient, 0)
+	sbcFactory := sbcInformers.NewSharedInformerFactory(clients.SbcClient, 0)
 	// Add ResourceTopology types to the default Kubernetes so events can be logged for them
 	if err := csmScheme.AddToScheme(scheme.Scheme); err != nil {
 		log.AddContext(ctx).Errorf("add to scheme error: %v", err)
@@ -144,6 +146,7 @@ func runController(ctx context.Context, clients *utils.ClientsSet, ch chan os.Si
 		VolumeInformer:   k8sFactory.Core().V1().PersistentVolumes(),
 		ClaimInformer:    k8sFactory.Core().V1().PersistentVolumeClaims(),
 		PodInformer:      k8sFactory.Core().V1().Pods(),
+		BackendInformer:  sbcFactory.Xuanwu().V1().StorageBackendClaims(),
 		ReSyncPeriod:     controllerConfig.GetResyncPeriod(),
 		EventRecorder:    clients.EventRecorder,
 		CmiClient:        clients.CmiClient,
@@ -154,6 +157,7 @@ func runController(ctx context.Context, clients *utils.ClientsSet, ch chan os.Si
 		stopCh := make(chan struct{})
 		factory.Start(stopCh)
 		k8sFactory.Start(stopCh)
+		sbcFactory.Start(stopCh)
 		go ctrl.Run(ctx, controllerConfig.GetControllerWorkers(), stopCh)
 
 		// Stop the controller until get signal

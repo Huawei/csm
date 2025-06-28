@@ -118,7 +118,7 @@ spec:
         - name: liveness-probe
           args:
             - --cmi-address=/cmi/cmi.sock
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --healthz-port=9808
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=liveness-probe
@@ -167,7 +167,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --cmi-address=$(ENDPOINT)
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --exporter-port=8887
             - --use-https=false    # modify the value to "true" if configured the SSL cert
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service

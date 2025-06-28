@@ -109,38 +109,30 @@ spec:
       {{- toYaml ((.Values.features).storageTopo).nodeSelector | nindent 8 }}
       {{- end }}
       {{- if (.Values.global).balancedDeploy }}
+      {{ if .Values.features.storageTopo.affinity }}
       affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - csm-prometheus-service
-                topologyKey: kubernetes.io/hostname
-              weight: 100
+      {{- toYaml .Values.features.storageTopo.affinity | nindent 8 }}
+      {{ end }}
       {{- end}}
+      {{ if .Values.features.storageTopo.tolerations }}
       tolerations:
-        - key: node.kubernetes.io/not-ready
-          operator: Exists
-          effect: NoExecute
-          tolerationSeconds: {{ ((.Values.global).tolerations).notReadySeconds | default 15 }}
-        - key: node.kubernetes.io/unreachable
-          operator: Exists
-          effect: NoExecute
-          tolerationSeconds: {{ ((.Values.global).tolerations).unreachableSeconds | default 15 }}
+      {{- toYaml .Values.features.storageTopo.tolerations | nindent 8 }}
+      {{ end }}
       serviceAccount: csm-storage-sa
       serviceAccountName: csm-storage-sa
+      {{ if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{ end }}
       containers:
         - name: liveness-probe
           args:
             - --cmi-address={{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --healthz-port={{ (.Values.global).healthPort | default 9808 }}
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=liveness-prob
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.livenessProbe" .Values.images.livenessProbe }}
@@ -160,13 +152,10 @@ spec:
               name: socket-dir
             - mountPath: /var/log
               name: log
+          {{ if ((.Values.containerResourcesSet).storageService).livenessProbe }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.storageService.livenessProbe.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.livenessProbe.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.storageService.livenessProbe.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.livenessProbe.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.storageService.livenessProbe | nindent 12 }}
+          {{ end }}
         - name: cmi-controller
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.containerMonitorInterface"
@@ -184,9 +173,10 @@ spec:
             - --cmi-address=$(ENDPOINT)
             - --cmi-name=cmi.huawei.com
             - --page-size=100
-            - --backend-namespace=huawei-csi
+            - --backend-namespace={{ (.Values.global).csiDriverNamespace | default "huawei-csi" }}
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=cmi-service
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           livenessProbe:
             failureThreshold: 5
@@ -205,13 +195,10 @@ spec:
               name: socket-dir
             - mountPath: /var/log/
               name: log
+          {{ if ((.Values.containerResourcesSet).storageService).cmiController }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.storageService.cmiController.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.cmiController.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.storageService.cmiController.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.cmiController.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.storageService.cmiController | nindent 12 }}
+          {{ end }}
         - args:
             - --cmi-address=$(ENDPOINT)
             - --rt-retry-base-delay={{ ((.Values.features).storageTopo).rtRetryBaseDelay | default "5s" }}
@@ -222,6 +209,8 @@ spec:
             - --pod-retry-max-delay={{ ((.Values.features).storageTopo).podRetryMaxDelay | default "1m" }}
             - --resync-period={{ ((.Values.features).storageTopo).resyncPeriod | default "15m" }}
             - --csi-driver-name={{ (.Values.global).csiDriverName }}
+            - --backend-namespace={{ (.Values.global).csiDriverNamespace | default "huawei-csi" }}
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "leader-election" . | nindent 12 }}
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=topo-service
@@ -244,13 +233,10 @@ spec:
           }}{{ required "Must provide the .Values.images.topoService" .Values.images.topoService }}
           imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
           name: topo-service
+          {{ if ((.Values.containerResourcesSet).storageService).topoService }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.storageService.topoService.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.topoService.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.storageService.topoService.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.storageService.topoService.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.storageService.topoService | nindent 12 }}
+          {{ end }}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:

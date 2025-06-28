@@ -1,17 +1,15 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+ Copyright (c) Huawei Technologies Co., Ltd. 2018-2025. All rights reserved.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
 */
 
 // Package main is the process entry
@@ -20,12 +18,13 @@ package main
 import (
 	"context"
 	"flag"
-	"net"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/huawei/csm/v2/config/consts"
 	"github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	"github.com/huawei/csm/v2/utils/log"
 	"github.com/huawei/csm/v2/utils/version"
@@ -52,6 +51,7 @@ var (
 	ipAddress    string
 	healthzPort  string
 	logFile      string
+	namespace    string
 
 	livenessprobe = &cobra.Command{
 		Use:  "livenessprobe",
@@ -75,7 +75,7 @@ func main() {
 		}
 
 		err = version.InitVersionConfigMapWithName(containerName,
-			version.CsmLivenessProbeVersion, namespaceEnv, defaultNamespace, versionCmName)
+			version.CsmLivenessProbeVersion, namespaceEnv, namespace, versionCmName)
 		if err != nil {
 			log.Errorf("init version file error: [%v]", err)
 			return
@@ -93,7 +93,7 @@ func main() {
 		hp := healthProbe{client: clientSet}
 		mux.HandleFunc(healthz, hp.probe)
 
-		addr := net.JoinHostPort(ipAddress, healthzPort)
+		addr := fmt.Sprintf("%s:%s", ipAddress, healthzPort)
 		log.Infof("serveMux listening at [%s]", addr)
 		err = http.ListenAndServe(addr, mux)
 		if err != nil {
@@ -136,4 +136,6 @@ func parseFlags() {
 		"TCP ports for listening healthz requests.")
 	livenessprobe.Flags().StringVar(&logFile, "log-file", defaultLogFile,
 		"The log file name of the liveness probe")
+	livenessprobe.Flags().StringVar(&namespace, consts.CSMNamespace, defaultNamespace,
+		"Namespace of the csm")
 }

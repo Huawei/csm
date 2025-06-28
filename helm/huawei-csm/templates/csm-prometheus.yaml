@@ -106,38 +106,30 @@ spec:
       {{- toYaml ((.Values.features).prometheusCollector).nodeSelector | nindent 8 }}
       {{- end }}
       {{- if (.Values.global).balancedDeploy }}
+      {{ if .Values.features.prometheusCollector.affinity }}
       affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values:
-                        - csm-storage-service
-                topologyKey: kubernetes.io/hostname
-              weight: 100
+      {{- toYaml .Values.features.prometheusCollector.affinity | nindent 8 }}
+      {{ end }}
       {{- end}}
+      {{ if .Values.features.prometheusCollector.tolerations }}
       tolerations:
-        - key: node.kubernetes.io/not-ready
-          operator: Exists
-          effect: NoExecute
-          tolerationSeconds: {{ ((.Values.global).tolerations).notReadySeconds | default 15 }}
-        - key: node.kubernetes.io/unreachable
-          operator: Exists
-          effect: NoExecute
-          tolerationSeconds: {{ ((.Values.global).tolerations).unreachableSeconds | default 15 }}
+      {{- toYaml .Values.features.prometheusCollector.tolerations | nindent 8 }}
+      {{ end }}
       serviceAccount: csm-prometheus-sa
       serviceAccountName: csm-prometheus-sa
+      {{ if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{ end }}
       containers:
         - name: liveness-probe
           args:
             - --cmi-address={{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --healthz-port={{ (.Values.global).healthPort | default 9808 }}
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=liveness-probe
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "log" (.Values.global).logging | nindent 12 }}
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.livenessProbe" .Values.images.livenessProbe }}
@@ -157,13 +149,10 @@ spec:
               name: socket-dir
             - mountPath: /var/log
               name: log
+          {{ if ((.Values.containerResourcesSet).prometheusService).livenessProbe }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.livenessProbe.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.prometheusService.livenessProbe | nindent 12 }}
+          {{ end }}
         - name: prometheus-collector
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.prometheusCollector" .Values.images.prometheusCollector }}
@@ -182,12 +171,13 @@ spec:
           imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
           args:
             - --cmi-address=$(ENDPOINT)
-            - --ip-address=$(POD_IP)
+            - --ip-address=[$(POD_IP)]
             - --exporter-port=8887
             - --use-https={{(((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=prometheus-collector
             - --csi-driver-name={{ (.Values.global).csiDriverName }}
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           volumeMounts:
             - mountPath: /cmi
@@ -212,13 +202,10 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
             timeoutSeconds: 3
+          {{ if ((.Values.containerResourcesSet).prometheusService).prometheusCollector }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.prometheusCollector.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.prometheusService.prometheusCollector | nindent 12 }}
+          {{ end }}
         - name: cmi-controller
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.containerMonitorInterface"
@@ -236,9 +223,10 @@ spec:
             - --cmi-address=$(ENDPOINT)
             - --cmi-name=cmi.huawei.com
             - --page-size=100
-            - --backend-namespace=huawei-csi
+            - --backend-namespace={{ .Values.global.csiDriverNamespace }}
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=cmi-service
+            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           livenessProbe:
             failureThreshold: 5
@@ -259,13 +247,10 @@ spec:
               name: log
             - mountPath: /etc/localtime
               name: host-time
+          {{ if ((.Values.containerResourcesSet).prometheusService).cmiController }}
           resources:
-            requests:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.cmiController.requests.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.cmiController.requests.memory }}
-            limits:
-              cpu: {{ .Values.containerResourcesSet.prometheusService.cmiController.limits.cpu }}
-              memory: {{ .Values.containerResourcesSet.prometheusService.cmiController.limits.memory }}
+          {{- toYaml .Values.containerResourcesSet.prometheusService.cmiController | nindent 12 }}
+          {{ end }}
       volumes:
         - emptyDir: { }
           name: socket-dir
@@ -292,6 +277,13 @@ metadata:
   labels:
     app: csm-prometheus-service
 spec:
+  {{- with .Values.service }}
+  ipFamilyPolicy: {{ .ipFamilyPolicy | default "SingleStack" }}
+  {{- with .ipFamilies }}
+  ipFamilies:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   selector:
     app: csm-prometheus-service
   type: NodePort

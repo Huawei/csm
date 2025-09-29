@@ -3546,7 +3546,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\"})",
+              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-san\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-san\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-san\"})",
               "hide": false,
               "interval": "",
               "legendFormat": "Free",
@@ -3554,7 +3554,7 @@
             },
             {
               "exemplar": true,
-              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\"}\r",
+              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\",storage_volume_type=\"oceanstor-san\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\",storage_volume_type=\"oceanstor-san\"}",
               "hide": false,
               "interval": "",
               "legendFormat": "Used",
@@ -3937,7 +3937,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\"})",
+              "expr": "huawei_storage_pv_capacity{backend=\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-nas\"} - (huawei_storage_pv_capacity_usage{backend=~\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-nas\"} / 100 * huawei_storage_pv_capacity{backend=~\"$StorageName\",pv_name=\"$PVName\",storage_volume_type=\"oceanstor-nas\"})",
               "hide": false,
               "interval": "",
               "legendFormat": "Free",
@@ -3945,7 +3945,7 @@
             },
             {
               "exemplar": true,
-              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\"}\r",
+              "expr": "(huawei_storage_pv_capacity_usage{backend=~\"$StorageName\", pv_name=\"$PVName\",storage_volume_type=\"oceanstor-nas\"} / 100) * huawei_storage_pv_capacity{backend=~\"$StorageName\", pv_name=\"$PVName\",storage_volume_type=\"oceanstor-nas\"}",
               "hide": false,
               "interval": "",
               "legendFormat": "Used",
@@ -4211,6 +4211,147 @@
         }
       ],
       "title": "PV-FIleSystem",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
+      "id": 146,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DataSource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "decimals": 2,
+              "mappings": [],
+              "unit": "gbytes"
+            },
+            "overrides": [
+              {
+                "__systemRef": "hideSeriesFrom",
+                "matcher": {
+                  "id": "byNames",
+                  "options": {
+                    "mode": "exclude",
+                    "names": [
+                      "Free",
+                      "Used",
+                      "Time"
+                    ],
+                    "prefix": "All except:",
+                    "readOnly": true
+                  }
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 8
+          },
+          "id": 145,
+          "options": {
+            "displayLabels": [
+              "value",
+              "name"
+            ],
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true,
+              "sortBy": "Value",
+              "sortDesc": true,
+              "values": [
+                "value",
+                "percent"
+              ]
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "multi",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.1.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DataSource}"
+              },
+              "disableTextWrap": false,
+              "editorMode": "builder",
+              "exemplar": true,
+              "expr": "huawei_storage_vstore_free_capacity{name=\"$VstoreName\", endpoint=\"$VstoreStorageName\", pool=\"$VstorePoolName\"}",
+              "fullMetaSearch": false,
+              "includeNullMetadata": true,
+              "legendFormat": "Free",
+              "range": true,
+              "refId": "A",
+              "useBackend": false
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DataSource}"
+              },
+              "disableTextWrap": false,
+              "editorMode": "builder",
+              "exemplar": true,
+              "expr": "huawei_storage_vstore_used_capacity{name=\"$VstoreName\", endpoint=\"$VstoreStorageName\", pool=\"$VstorePoolName\"}",
+              "fullMetaSearch": false,
+              "hide": false,
+              "includeNullMetadata": true,
+              "instant": false,
+              "legendFormat": "Used",
+              "range": true,
+              "refId": "B",
+              "useBackend": false
+            }
+          ],
+          "title": "Capacity usage of vstore $VstoreName",
+          "type": "piechart"
+        }
+      ],
+      "title": "Vstore",
       "type": "row"
     }
   ],
@@ -4604,6 +4745,68 @@
         "tagsQuery": "",
         "type": "query",
         "useTags": false
+      },
+      {
+        "current": {
+          "text": "v7-nfs-172",
+          "value": "v7-nfs-172"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_vstore_used_capacity{endpoint=~\".*\"},endpoint)",
+        "includeAll": false,
+        "label": "Vstore Storage Device",
+        "name": "VstoreStorageName",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(huawei_storage_vstore_used_capacity{endpoint=~\".*\"},endpoint)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "System_vStore",
+          "value": "System_vStore"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_vstore_free_capacity{endpoint=~\"$VstoreStorageName\", name=~\".*\"},name)",
+        "includeAll": false,
+        "label": "Vstore",
+        "name": "VstoreName",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(huawei_storage_vstore_free_capacity{endpoint=~\"$VstoreStorageName\", name=~\".*\"},name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "System_vStore",
+          "value": "System_vStore"
+        },
+        "datasource": "${DataSource}",
+        "definition": "label_values(huawei_storage_vstore_free_capacity{endpoint=~\"$VstoreStorageName\", pool=~\".*\"},pool)",
+        "includeAll": false,
+        "label": "Vstore Pool",
+        "name": "VstorePoolName",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(huawei_storage_vstore_free_capacity{endpoint=~\"$VstoreStorageName\", pool=~\".*\"},pool)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },

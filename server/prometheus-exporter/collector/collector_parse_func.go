@@ -26,11 +26,12 @@ const (
 	runningStatusToPrometheus = "running_status"
 	runningStatusFromStorage  = "RUNNINGSTATUS"
 	sectorsTOGb               = 1024 * 1024 * 2
+	byteToGb                  = 1024 * 1024 * 1024
 	calculatePercentage       = 100
 	bitSize                   = 64
 	unlimitedPrecision        = -1
 	precisionOfTwo            = 2
-	precisionOfFour           = 4
+	precisionOfSmallest       = -1
 	skipReportValue           = "skipReportValue"
 	storageTypeSan            = "oceanstor-san"
 	storageTypeNas            = "oceanstor-nas"
@@ -76,7 +77,7 @@ func parseStorageSectorsToGB(inDataKey, metricsName string, inData map[string]st
 	if err != nil {
 		return ""
 	}
-	return strconv.FormatFloat(sectorsData/sectorsTOGb, 'f', precisionOfFour, bitSize)
+	return strconv.FormatFloat(sectorsData/sectorsTOGb, 'f', precisionOfSmallest, bitSize)
 }
 
 func parseLabelListToLabelValueSlice(labelKeys []string,
@@ -93,4 +94,15 @@ func parseLabelListToLabelValueSlice(labelKeys []string,
 		labelValueSlice = append(labelValueSlice, labelValue)
 	}
 	return labelValueSlice
+}
+
+func parseVstoreCapacityToGB(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+	sectorsData, err := strconv.ParseFloat(inData[inDataKey], bitSize)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatFloat(sectorsData/byteToGb, 'f', precisionOfSmallest, bitSize)
 }

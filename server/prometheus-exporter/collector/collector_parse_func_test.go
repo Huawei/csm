@@ -118,12 +118,42 @@ func Test_parseStorageSectorsToGB(t *testing.T) {
 	mockInData := map[string]string{
 		"fake_key": "209715200",
 	}
+	mockInData2 := map[string]string{
+		"fake_key": "209715201",
+	}
 
 	// action
 	got := parseStorageSectorsToGB(mockInDataKey, "", mockInData)
+	got2 := parseStorageSectorsToGB(mockInDataKey, "", mockInData2)
 
 	// assert
-	if !reflect.DeepEqual(got, "100.0000") {
-		t.Errorf("parseStorageStatus() got = %v, want %v", got, "100.0000")
+	if !reflect.DeepEqual(got, "100") {
+		t.Errorf("parseStorageStatus() got = %v, want %v", got, "100")
+	}
+	if !reflect.DeepEqual(got2, "100.00000047683716") {
+		t.Errorf("parseStorageStatus() got2 = %v, want %v", got2, "100.00000047683716")
+	}
+}
+
+func Test_parseVstoreCapacityToGB(t *testing.T) {
+	// arrange
+	mockInDataKey := "fake_key"
+	mockInData := map[string]string{
+		"fake_key": "107374182400",
+	}
+	mockInData2 := map[string]string{
+		"fake_key": "107374182401",
+	}
+
+	// action
+	got := parseVstoreCapacityToGB(mockInDataKey, "", mockInData)
+	got2 := parseVstoreCapacityToGB(mockInDataKey, "", mockInData2)
+
+	// assert
+	if !reflect.DeepEqual(got, "100") {
+		t.Errorf("parseVstoreCapacityToGB() got = %v, want %v", got, "100")
+	}
+	if !reflect.DeepEqual(got2, "100.00000000093132") {
+		t.Errorf("parseVstoreCapacityToGB() got2 = %v, want %v", got2, "100.00000000093132")
 	}
 }

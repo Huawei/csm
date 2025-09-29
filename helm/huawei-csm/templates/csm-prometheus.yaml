@@ -30,7 +30,7 @@ rules:
     resources: [ "persistentvolumes","persistentvolumeclaims","pods" ]
     verbs: [ "get","list" ]
   - apiGroups: [ "xuanwu.huawei.io" ]
-    resources: [ "storagebackendclaims" ]
+    resources: [ "storagebackendclaims","storagebackendcontents" ]
     verbs: [ "get","list" ]
 
 ---

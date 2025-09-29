@@ -50,6 +50,7 @@ var (
 		"lun":         {},
 		"filesystem":  {},
 		"pv":          {},
+		"vstore":      {},
 	}
 )
 
@@ -59,7 +60,7 @@ func checkMetricsObject(ctx context.Context, params map[string][]string, monitor
 	}
 
 	for collectorName, metricsIndicators := range params {
-		if _, err := metricsObjectLegal[collectorName]; !err {
+		if _, ok := metricsObjectLegal[collectorName]; !ok {
 			return fmt.Errorf("the collectorName [%s] is invalid", collectorName)
 		}
 
@@ -79,7 +80,7 @@ func parseRequestPath(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	}
 
 	monitorType := path[1]
-	if _, err := monitorTypeLegal[monitorType]; !err {
+	if _, ok := monitorTypeLegal[monitorType]; !ok {
 		http.Error(w, "MonitorType is invalid.", http.StatusBadRequest)
 		return "", "", fmt.Errorf("monitor type [%s] is invalid", monitorType)
 	}

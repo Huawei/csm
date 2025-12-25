@@ -62,7 +62,7 @@ const (
 	// StorageGRPCSock the path of the grpc sock file
 	StorageGRPCSock = "cmi-address"
 	// StorageBackendNamespace the namespace of the sbc
-	StorageBackendNamespace = "storage-backend-namespace"
+	StorageBackendNamespace = "backend-namespace"
 	// CSIDriverName the name of the csi driver
 	CSIDriverName = "csi-driver-name"
 	// UseHttps the option to use https or not

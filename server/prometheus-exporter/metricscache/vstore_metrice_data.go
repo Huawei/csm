@@ -23,9 +23,9 @@ import (
 	"slices"
 	"strings"
 
-	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
 	"github.com/huawei/csm/v2/controller/utils/consts"
 	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
@@ -105,11 +105,11 @@ func filterVstoreBackend(backendClaims *xuanwuV1.StorageBackendClaimList,
 	supportStorageTypeContentList := make([]xuanwuV1.StorageBackendContent, 0)
 	backendContentItemMap := make(map[string]xuanwuV1.StorageBackendContent)
 	for _, sbct := range backendContents.Items {
-		backendContentItemMap[sbct.Spec.ConfigmapMeta] = sbct
+		backendContentItemMap[sbct.Spec.BackendClaim] = sbct
 	}
 	for _, sbc := range backendClaims.Items {
 		if slices.Contains(consts.SupportedType, sbc.Status.StorageType) {
-			if sbct, ok := backendContentItemMap[sbc.Spec.ConfigMapMeta]; ok {
+			if sbct, ok := backendContentItemMap[sbc.Namespace+"/"+sbc.Name]; ok {
 				supportStorageTypeContentList = append(supportStorageTypeContentList, sbct)
 			}
 		}

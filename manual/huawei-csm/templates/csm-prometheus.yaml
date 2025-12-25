@@ -17,7 +17,7 @@ rules:
     resources: [ "persistentvolumes","persistentvolumeclaims","pods" ]
     verbs: [ "get","list" ]
   - apiGroups: [ "xuanwu.huawei.io" ]
-    resources: [ "storagebackendclaims" ]
+    resources: [ "storagebackendclaims","storagebackendcontents" ]
     verbs: [ "get","list" ]
 
 ---
@@ -177,6 +177,7 @@ spec:
             - --log-level=info
             - --log-file-size=20M
             - --max-backups=9
+            - --backend-namespace=huawei-csi
           volumeMounts:
             - mountPath: /cmi
               name: socket-dir

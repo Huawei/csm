@@ -178,6 +178,7 @@ spec:
             - --log-file=prometheus-collector
             - --csi-driver-name={{ (.Values.global).csiDriverName }}
             - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
+            - --backend-namespace={{ .Values.global.csiDriverNamespace }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           volumeMounts:
             - mountPath: /cmi

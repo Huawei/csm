@@ -16,8 +16,11 @@ metadata:
     app: csm-storage-service
 rules:
   - apiGroups: [ "" ]
-    resources: [ "secrets", "events", "configmaps" ]
+    resources: [ "secrets", "configmaps" ]
     verbs: [ "create", "get", "update", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "events" ]
+    verbs: [ "create", "get", "update", "delete", "patch" ]
   - apiGroups: [ "coordination.k8s.io" ]
     resources: [ "leases" ]
     verbs: [ "create", "get", "update", "delete" ]

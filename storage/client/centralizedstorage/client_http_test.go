@@ -4,7 +4,7 @@
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,7 +12,6 @@
  limitations under the License.
 */
 
-// Package centralizedstorage is related with storage client
 package centralizedstorage
 
 import (
@@ -28,10 +27,10 @@ import (
 
 func TestGetThenSuccess(t *testing.T) {
 	response := map[string]interface{}{
-		"Error": map[string]interface{}{
-			"code": 0,
+		"error": map[string]interface{}{
+			"code": float64(0),
 		},
-		"Data": []map[string]interface{}{},
+		"data": []map[string]interface{}{},
 	}
 
 	var cli *client.Client
@@ -50,5 +49,49 @@ func TestGetThenSuccess(t *testing.T) {
 	_, err := centralizedCli.get(ctx, "urlTest", nil)
 	if err != nil {
 		t.Errorf("get() error: %v", err)
+	}
+}
+
+func TestGetResultFromResponseList_MoreThanOneData(t *testing.T) {
+	response := &Response{
+		Error: map[string]interface{}{
+			"code": float64(0),
+		},
+		Data: []interface{}{
+			map[string]interface{}{"key": "value1"},
+			map[string]interface{}{"key": "value2"},
+		},
+	}
+
+	centralizedCli := &CentralizedClient{}
+	_, _, err := centralizedCli.getResultFromResponseList(ctx, response)
+	if err == nil {
+		t.Errorf("getResultFromResponseList() expected error for more than one data")
+	}
+}
+
+func TestGetResultFromResponseList_CheckResponseCodeError(t *testing.T) {
+	response := &Response{
+		Error: map[string]interface{}{
+			"code": float64(1),
+		},
+	}
+
+	centralizedCli := &CentralizedClient{}
+	_, _, err := centralizedCli.getResultFromResponseList(ctx, response)
+	if err == nil {
+		t.Errorf("getResultFromResponseList() expected error from checkResponseCode")
+	}
+}
+
+func TestCheckResponseCode_CodeNotExist(t *testing.T) {
+	response := &Response{
+		Error: map[string]interface{}{},
+	}
+
+	centralizedCli := &CentralizedClient{}
+	_, err := centralizedCli.checkResponseCode(ctx, response)
+	if err == nil {
+		t.Errorf("checkResponseCode() expected error for code not exist")
 	}
 }

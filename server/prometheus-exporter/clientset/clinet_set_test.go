@@ -17,11 +17,14 @@
 package clientset
 
 import (
+	"errors"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"google.golang.org/grpc"
+	"k8s.io/client-go/rest"
 
 	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
 )
@@ -66,5 +69,83 @@ func TestDeleteExporterClientSet(t *testing.T) {
 	// assert
 	if called != true {
 		t.Errorf("DeleteExporterClientSet() called = %v, want true", called)
+	}
+}
+
+func TestGetExporterClientSet_Nil(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = nil
+	defer func() { exporterClientSet = orig }()
+
+	if got := GetExporterClientSet(); got != nil {
+		t.Errorf("GetExporterClientSet() = %v, want nil", got)
+	}
+}
+
+func TestDeleteExporterClientSet_NilClientSet(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = nil
+	defer func() { exporterClientSet = orig }()
+
+	DeleteExporterClientSet()
+}
+
+func TestDeleteExporterClientSet_NilGRPCClientSet(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = &ClientsSet{}
+	defer func() { exporterClientSet = orig }()
+
+	DeleteExporterClientSet()
+}
+
+func TestDeleteExporterClientSet_NilConn(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = &ClientsSet{
+		StorageGRPCClientSet: &storageGRPC.ClientSet{},
+	}
+	defer func() { exporterClientSet = orig }()
+
+	DeleteExporterClientSet()
+}
+
+func TestInitKubeClientAndSbcClient_NilExporterClientSet(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = nil
+	defer func() { exporterClientSet = orig }()
+
+	initKubeClientAndSbcClient()
+}
+
+func TestInitKubeClientAndSbcClient_InClusterConfigError(t *testing.T) {
+	orig := exporterClientSet
+	exporterClientSet = &ClientsSet{}
+	defer func() { exporterClientSet = orig }()
+
+	mock := gomonkey.NewPatches()
+	defer mock.Reset()
+
+	mock.ApplyFunc(rest.InClusterConfig, func() (*rest.Config, error) {
+		return nil, errors.New("in cluster config error")
+	})
+
+	initKubeClientAndSbcClient()
+
+	if exporterClientSet.InitError == nil {
+		t.Error("expected InitError to be set")
+	}
+}
+
+func TestInitExporterClientSet_AlreadyInitialized(t *testing.T) {
+	origOnce := once
+	once = sync.Once{}
+	defer func() { once = origOnce }()
+
+	origExporterClientSet := exporterClientSet
+	exporterClientSet = &ClientsSet{}
+	defer func() { exporterClientSet = origExporterClientSet }()
+
+	cs := InitExporterClientSet("/fake/sock")
+	if cs != exporterClientSet {
+		t.Error("should return existing clientSet")
 	}
 }

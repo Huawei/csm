@@ -52,6 +52,10 @@ const (
 const (
 	// KubeConfig key name of kube config file path config
 	KubeConfig = "kube-config"
+	// KubeAPIQPS key name of k8s client QPS config
+	KubeAPIQPS = "kube-api-qps"
+	// KubeAPIBurst key name of k8s client burst config
+	KubeAPIBurst = "kube-api-burst"
 )
 
 const (

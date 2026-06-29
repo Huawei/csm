@@ -71,10 +71,11 @@ type StoragePoolObject struct {
 
 // FileSystemObject filesystem object information
 type FileSystemObject struct {
-	Id                             string `json:"ID" metrics:"ID"`
-	Name                           string `json:"NAME" metrics:"NAME"`
-	Capacity                       string `json:"CAPACITY" metrics:"CAPACITY"`
-	AllocCapacity                  string `json:"ALLOCCAPACITY" metrics:"ALLOCCAPACITY"`
-	AllocatedPoolQuota             string `json:"allocatedPoolQuota" metrics:"allocatedPoolQuota"`
-	AvailableAndAllocCapacityRatio string `json:"AVAILABLEANDALLOCCAPACITYRATIO" metrics:"AVAILABLEANDALLOCCAPACITYRATIO"`
+	Id                      string `json:"ID" metrics:"ID"`
+	Name                    string `json:"NAME" metrics:"NAME"`
+	Capacity                string `json:"CAPACITY" metrics:"CAPACITY"`
+	AllocCapacity           string `json:"ALLOCCAPACITY" metrics:"ALLOCCAPACITY"`
+	AllocatedPoolQuota      string `json:"allocatedPoolQuota" metrics:"allocatedPoolQuota"`
+	SnapshotUsedCapacity    string `json:"SNAPSHOTUSECAPACITY" metrics:"SNAPSHOTUSECAPACITY"`
+	SnapshotReserveCapacity string `json:"SNAPSHOTRESERVECAPACITY" metrics:"SNAPSHOTRESERVECAPACITY"`
 }

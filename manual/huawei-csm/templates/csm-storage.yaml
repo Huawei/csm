@@ -184,6 +184,8 @@ spec:
             - --cmi-name=cmi.huawei.com
             - --page-size=100
             - --backend-namespace=huawei-csi
+            - --kube-api-qps=5
+            - --kube-api-burst=10
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=cmi-service
             - --logging-module=file
@@ -225,6 +227,8 @@ spec:
             - --resync-period=15m
             - --csi-driver-name=csi.huawei.com
             - --backend-namespace=huawei-csi
+            - --kube-api-qps=5
+            - --kube-api-burst=10
             - --enable-leader-election=false
             - --leader-lease-duration=8s
             - --leader-renew-deadline=6s

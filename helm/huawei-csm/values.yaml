@@ -92,6 +92,12 @@ features:
                       - csm-storage-service
               topologyKey: kubernetes.io/hostname
             weight: 100
+    # kubeAPIQps: the maximum QPS for prometheus-collector container
+    # Default value: 5
+    kubeAPIQps: 5
+    # kubeAPIBurst: the maximum burst for prometheus-collector container
+    # Default value: 10
+    kubeAPIBurst: 10
 
   # storageTopo: allow to provision pv/pod to storage.
   storageTopo:
@@ -144,6 +150,12 @@ features:
                       - csm-prometheus-service
               topologyKey: kubernetes.io/hostname
             weight: 100
+    # kubeAPIQps: the maximum QPS for topo-service container
+    # Default value: 5
+    kubeAPIQps: 5
+    # kubeAPIBurst: the maximum burst for topo-service container
+    # Default value: 10
+    kubeAPIBurst: 10
 
 cluster:
   name: "kubernetes"

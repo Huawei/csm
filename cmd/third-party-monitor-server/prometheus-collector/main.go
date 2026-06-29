@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/huawei/csm/v2/config"
+	clientConfig "github.com/huawei/csm/v2/config/client"
 	"github.com/huawei/csm/v2/config/common"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
 	logConfig "github.com/huawei/csm/v2/config/log"
@@ -50,7 +51,8 @@ var prometheusExporter = &cobra.Command{
 }
 
 func main() {
-	manager := config.NewOptionManager(prometheusExporter.Flags(), logConfig.Option, exporterConfig.Option, common.Option)
+	manager := config.NewOptionManager(prometheusExporter.Flags(), logConfig.Option, clientConfig.Option,
+		exporterConfig.Option, common.Option)
 	manager.AddFlags()
 
 	prometheusExporter.Run = func(cmd *cobra.Command, args []string) {

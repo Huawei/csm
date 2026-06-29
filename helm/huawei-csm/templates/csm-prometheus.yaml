@@ -179,6 +179,8 @@ spec:
             - --csi-driver-name={{ (.Values.global).csiDriverName }}
             - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             - --backend-namespace={{ .Values.global.csiDriverNamespace }}
+            - --kube-api-qps={{ ((.Values.features).prometheusCollector).kubeAPIQps | default 5 }}
+            - --kube-api-burst={{ ((.Values.features).prometheusCollector).kubeAPIBurst | default 10 }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           volumeMounts:
             - mountPath: /cmi
@@ -225,6 +227,8 @@ spec:
             - --cmi-name=cmi.huawei.com
             - --page-size=100
             - --backend-namespace={{ .Values.global.csiDriverNamespace }}
+            - --kube-api-qps={{ ((.Values.features).prometheusCollector).kubeAPIQps | default 5 }}
+            - --kube-api-burst={{ ((.Values.features).prometheusCollector).kubeAPIBurst | default 10 }}
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=cmi-service
             - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}

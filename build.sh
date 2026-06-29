@@ -86,9 +86,8 @@ cp -rf "${workdir}"/helm/huawei-csm/crds "${release_dir_path}"/manual/huawei-csm
 # cd to release dir to pack the package
 cd "${release_dir_path}"
 
-# set version in values.yaml and upload-image.sh
+# set version in values.yaml
 sed -i "s/{{version}}/${VER}/g" helm/huawei-csm/values.yaml
-sed -i "s/{{version}}/${VER}/g" helm/huawei-csm/upload-image.sh
 
 # set version in manual templates
 sed -i "s/{{version}}/${VER}/g" manual/huawei-csm/templates/csm-prometheus.yaml

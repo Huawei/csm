@@ -43,7 +43,7 @@ func (t *TextTemplate) Format(args map[string]interface{}) (string, error) {
 func NewTextTemplate(templateName string, str string) *TextTemplate {
 	temp, err := template.New(templateName).Parse(str)
 	if err != nil {
-		log.Errorln("init text template error, name: %s, str: %s", templateName, str)
+		log.Errorf("init text template error, name: %s, str: %s", templateName, str)
 		return nil
 	}
 	return &TextTemplate{text: temp}

@@ -78,13 +78,13 @@ func main() {
 			return
 		}
 
+		ctx := context.WithValue(context.Background(), "controller", "resourceTopologyController")
+
 		clientsSet, err := utils.NewClientsSet(clientConfig.GetKubeConfig(), controllerConfig.GetCmiAddress())
 		if err != nil {
 			log.Errorf("new client set error: [%v]", err)
 			return
 		}
-
-		ctx := context.WithValue(context.Background(), "controller", "resourceTopologyController")
 
 		signalChan := make(chan os.Signal, 1)
 		defer close(signalChan)

@@ -4,7 +4,7 @@
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
+       http://www.apache.org/licenses/LICENSE-2.0
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,7 +12,6 @@
  limitations under the License.
 */
 
-// Package centralizedstorage is related with storage client
 package centralizedstorage
 
 import (
@@ -30,16 +29,15 @@ import (
 	"github.com/huawei/csm/v2/utils/resource"
 )
 
-// TestLoginThenSuccess test Login() then success
 func TestLoginThenSuccess(t *testing.T) {
 	response := map[string]interface{}{
-		"Error": map[string]interface{}{
-			"code": 0,
+		"error": map[string]interface{}{
+			"code": float64(0),
 		},
-		"Data": map[string]interface{}{
+		"data": map[string]interface{}{
 			"deviceid":     "1",
 			"iBaseToken":   "2",
-			"accountstate": 1,
+			"accountstate": float64(1),
 		},
 	}
 	var cli *client.Client
@@ -76,7 +74,6 @@ func TestLoginThenSuccess(t *testing.T) {
 	}
 }
 
-// TestLoginWhenUnConnectedThenFailed test Login() then failed
 func TestLoginWhenUnConnectedThenFailed(t *testing.T) {
 	var cli *client.Client
 	httpGet := gomonkey.ApplyMethod(reflect.TypeOf(cli), "Call",
@@ -113,15 +110,14 @@ func TestLoginWhenUnConnectedThenFailed(t *testing.T) {
 	}
 }
 
-// TestLoginWhenIBaseTokenNotExistThenFailed test Login() when iBaseToken not exist then failed
 func TestLoginWhenIBaseTokenNotExistThenFailed(t *testing.T) {
 	response := map[string]interface{}{
-		"Error": map[string]interface{}{
-			"code": 0,
+		"error": map[string]interface{}{
+			"code": float64(0),
 		},
-		"Data": map[string]interface{}{
+		"data": map[string]interface{}{
 			"deviceid":     "1",
-			"accountstate": 1,
+			"accountstate": float64(1),
 		},
 	}
 
@@ -160,11 +156,10 @@ func TestLoginWhenIBaseTokenNotExistThenFailed(t *testing.T) {
 	}
 }
 
-// TestLogoutThenSuccess test Logout() then success
 func TestLogoutThenSuccess(t *testing.T) {
 	response := map[string]interface{}{
-		"Error": map[string]interface{}{
-			"code": 0,
+		"error": map[string]interface{}{
+			"code": float64(0),
 		},
 	}
 
@@ -182,4 +177,49 @@ func TestLogoutThenSuccess(t *testing.T) {
 		},
 	}
 	centralizedCli.Logout(ctx)
+}
+
+func TestLogoutCheckResponseCodeError(t *testing.T) {
+	response := map[string]interface{}{
+		"error": map[string]interface{}{
+			"code": float64(1),
+		},
+	}
+
+	var cli *client.Client
+	httpGet := gomonkey.ApplyMethod(reflect.TypeOf(cli), "Call",
+		func(_ *client.Client, ctx context.Context, method string,
+			url string, reqData map[string]interface{}) (map[string]interface{}, error) {
+			return response, nil
+		})
+	defer httpGet.Reset()
+
+	centralizedCli := &CentralizedClient{
+		Client: client.Client{
+			Semaphore: utils.NewSemaphore(3),
+		},
+	}
+	centralizedCli.Logout(ctx)
+}
+
+func TestLogin_GetBackendLoginParamsError(t *testing.T) {
+	var coreCli *resource.Client
+	getSecret := gomonkey.ApplyMethod(reflect.TypeOf(coreCli), "GetSecret",
+		func(_ *resource.Client, name string, namespace string) (*coreV1.Secret, error) {
+			return nil, errors.New("get secret error")
+		})
+	defer getSecret.Reset()
+
+	centralizedCli := &CentralizedClient{
+		Client: client.Client{
+			Semaphore:       utils.NewSemaphore(3),
+			SecretName:      "test",
+			SecretNamespace: "test",
+		},
+	}
+
+	err := centralizedCli.Login(ctx)
+	if err == nil {
+		t.Errorf("Login() expected error")
+	}
 }

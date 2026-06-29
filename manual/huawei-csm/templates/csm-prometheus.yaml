@@ -178,6 +178,8 @@ spec:
             - --log-file-size=20M
             - --max-backups=9
             - --backend-namespace=huawei-csi
+            - --kube-api-qps=5
+            - --kube-api-burst=10
           volumeMounts:
             - mountPath: /cmi
               name: socket-dir
@@ -222,6 +224,8 @@ spec:
             - --cmi-name=cmi.huawei.com
             - --page-size=100
             - --backend-namespace=huawei-csi
+            - --kube-api-qps=5
+            - --kube-api-burst=10
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
             - --log-file=cmi-service
             - --logging-module=file

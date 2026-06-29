@@ -29,59 +29,66 @@ import (
 )
 
 func Test_CentralizedClient_CreateLabel(t *testing.T) {
-	// arrange
 	var cli *client.Client
 	var centralizedCli = &CentralizedClient{
 		Client: client.Client{Semaphore: utils.NewSemaphore(3)},
 	}
 	var data = map[string]interface{}{}
 
-	// mock
 	gomonkey.ApplyMethod(reflect.TypeOf(cli), "Call",
 		func(_ *client.Client, ctx context.Context, method string,
 			url string, reqData map[string]interface{}) (map[string]interface{}, error) {
 			return map[string]interface{}{
-				"Error": map[string]interface{}{
-					"code": 0,
+				"error": map[string]interface{}{
+					"code": float64(0),
 				},
-				"Data": map[string]interface{}{},
+				"data": map[string]interface{}{},
 			}, nil
 		})
 
-	// act
 	_, err := centralizedCli.CreateLabel(context.Background(), "CreatePodLabel", data, label.PodLabelExist)
 
-	// assert
 	if err != nil {
 		t.Errorf("Test_CentralizedClient_CreateLabel() error: %v", err)
 	}
 }
 
 func Test_CentralizedClient_DeleteLabel(t *testing.T) {
-	// arrange
 	var cli *client.Client
 	var centralizedCli = &CentralizedClient{
 		Client: client.Client{Semaphore: utils.NewSemaphore(3)},
 	}
 	var data = map[string]interface{}{}
 
-	// mock
 	gomonkey.ApplyMethod(reflect.TypeOf(cli), "Call",
 		func(_ *client.Client, ctx context.Context, method string,
 			url string, reqData map[string]interface{}) (map[string]interface{}, error) {
 			return map[string]interface{}{
-				"Error": map[string]interface{}{
-					"code": 0,
+				"error": map[string]interface{}{
+					"code": float64(0),
 				},
-				"Data": map[string]interface{}{},
+				"data": map[string]interface{}{},
 			}, nil
 		})
 
-	// act
 	_, err := centralizedCli.DeleteLabel(context.Background(), "DeletePodLabel", data, label.PodLabelNotExist)
 
-	// assert
 	if err != nil {
 		t.Errorf("Test_CentralizedClient_DeletePodLabel() error: %v", err)
+	}
+}
+
+func TestGetResponse_ErrorCode(t *testing.T) {
+	resp := &Response{
+		Error: map[string]interface{}{
+			"code":        float64(1),
+			"description": "error",
+		},
+		Data: map[string]interface{}{"key": "value"},
+	}
+
+	_, _, err := getResponse(context.Background(), resp, "/test", label.PvLabelExist)
+	if err == nil {
+		t.Errorf("getResponse() expected error for error code")
 	}
 }

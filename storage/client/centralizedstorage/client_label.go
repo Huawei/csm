@@ -156,7 +156,7 @@ func getResponse(ctx context.Context, resp *Response, url string, permittedCode 
 	if respCode != nil && *respCode != httpcode.SuccessCode {
 		msg := fmt.Sprintf("storage client response httpcode is not success code, "+
 			"code: %v, description: %v", respCode, resp.Error["description"])
-		log.AddContext(ctx).Errorf(msg)
+		log.AddContext(ctx).Errorln(msg)
 		return nil, respCode, errors.New(msg)
 	}
 

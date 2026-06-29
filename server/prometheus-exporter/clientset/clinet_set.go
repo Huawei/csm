@@ -71,6 +71,8 @@ func initKubeClientAndSbcClient() {
 		return
 	}
 
+	clientConfig.ApplyKubeAPIQPSBurst(kubeConfig)
+
 	kubeClient, err := kubernetes.NewForConfig(kubeConfig)
 	if err != nil {
 		log.Errorf("init kube client failed, err: [%v]", err)

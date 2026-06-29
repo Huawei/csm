@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/huawei/csm/v2/config"
+	clientConfig "github.com/huawei/csm/v2/config/client"
 	cmiConfig "github.com/huawei/csm/v2/config/cmi"
 	"github.com/huawei/csm/v2/config/common"
 	logConfig "github.com/huawei/csm/v2/config/log"
@@ -50,7 +51,8 @@ var cmiService = &cobra.Command{
 }
 
 func main() {
-	manager := config.NewOptionManager(cmiService.Flags(), logConfig.Option, cmiConfig.Option, common.Option)
+	manager := config.NewOptionManager(cmiService.Flags(), logConfig.Option, clientConfig.Option, cmiConfig.Option,
+		common.Option)
 	manager.AddFlags()
 
 	cmiService.Run = func(cmd *cobra.Command, args []string) {

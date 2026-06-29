@@ -173,7 +173,7 @@ func (c *CentralizedClient) getResultFromResponseList(ctx context.Context,
 
 	if len(respData) > 1 {
 		msg := fmt.Sprintf("storage client find more than one data in response data list: %v", respData)
-		log.AddContext(ctx).Errorf(msg)
+		log.AddContext(ctx).Errorln(msg)
 		return nil, respCode, errors.New(msg)
 	}
 
@@ -254,14 +254,14 @@ func (c *CentralizedClient) checkResponseCode(ctx context.Context, response *Res
 	respCode, exist := response.Error["code"].(float64)
 	if !exist {
 		msg := fmt.Sprintf("storage client response httpcode does not exist, response: %v", response)
-		log.AddContext(ctx).Errorf(msg)
+		log.AddContext(ctx).Errorln(msg)
 		return nil, errors.New(msg)
 	}
 
 	if respCode != httpcode.SuccessCode {
 		msg := fmt.Sprintf("storage client response httpcode is not success code, "+
 			"code: %v, description: %v", respCode, response.Error["description"])
-		log.AddContext(ctx).Errorf(msg)
+		log.AddContext(ctx).Errorln(msg)
 		return &respCode, errors.New(msg)
 	}
 

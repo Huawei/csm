@@ -18,7 +18,6 @@ package utils
 import (
 	"fmt"
 
-	sbcClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
 	apiV1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -28,6 +27,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 
+	sbcClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
+
+	"github.com/huawei/csm/v2/config/client"
 	cmiGrpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	xuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned"
 	"github.com/huawei/csm/v2/utils/log"
@@ -75,6 +77,8 @@ func NewClientsSet(config string, cmiAddress string) (*ClientsSet, error) {
 		log.Errorf("getting kubeConfig [%s] err: [%v]", config, err)
 		return nil, err
 	}
+
+	client.ApplyKubeAPIQPSBurst(kubeConfig)
 
 	clientsSet := &ClientsSet{}
 	clientsSet.Config = kubeConfig

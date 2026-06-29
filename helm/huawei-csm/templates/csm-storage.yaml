@@ -177,6 +177,8 @@ spec:
             - --cmi-name=cmi.huawei.com
             - --page-size=100
             - --backend-namespace={{ (.Values.global).csiDriverNamespace | default "huawei-csi" }}
+            - --kube-api-qps={{ ((.Values.features).storageTopo).kubeAPIQps | default 5 }}
+            - --kube-api-burst={{ ((.Values.features).storageTopo).kubeAPIBurst | default 10 }}
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=cmi-service
             - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
@@ -213,6 +215,8 @@ spec:
             - --resync-period={{ ((.Values.features).storageTopo).resyncPeriod | default "15m" }}
             - --csi-driver-name={{ (.Values.global).csiDriverName }}
             - --backend-namespace={{ (.Values.global).csiDriverNamespace | default "huawei-csi" }}
+            - --kube-api-qps={{ ((.Values.features).storageTopo).kubeAPIQps | default 5 }}
+            - --kube-api-burst={{ ((.Values.features).storageTopo).kubeAPIBurst | default 10 }}
             - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
             {{- include "leader-election" . | nindent 12 }}
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service

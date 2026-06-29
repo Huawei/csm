@@ -53,7 +53,8 @@ func (c *CentralizedClient) Login(ctx context.Context) error {
 	log.AddContext(ctx).Infof("storage client login start, urls: %v", c.Urls)
 	params, err := c.getBackendLoginParamsFromSecret(ctx)
 	if err != nil {
-		log.AddContext(ctx).Errorf("get BackendLoginParams failed, err: %w", err)
+		msg := fmt.Errorf("get BackendLoginParams failed, err: %w", err)
+		log.AddContext(ctx).Errorln(msg)
 		return err
 	}
 

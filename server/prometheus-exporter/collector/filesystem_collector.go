@@ -31,8 +31,10 @@ func init() {
 }
 
 const (
-	filesystemCapacityKey     = "CAPACITY"
-	filesystemUsedCapacityKey = "allocatedPoolQuota"
+	filesystemCapacityKey         = "CAPACITY"
+	filesystemUsedCapacityKey     = "allocatedPoolQuota"
+	filesystemSnapshotCapacityKey = "SNAPSHOTUSECAPACITY"
+	snapshotReserveCapacityKey    = "SNAPSHOTRESERVECAPACITY"
 )
 
 var filesystemBuildMap = map[string]collectorInitFunc{
@@ -41,17 +43,20 @@ var filesystemBuildMap = map[string]collectorInitFunc{
 }
 
 var filesystemObjectMetricsLabelMap = map[string][]string{
-	"capacity":       {"endpoint", "id", "name", "object"},
-	"capacity_usage": {"endpoint", "id", "name", "object"},
+	"capacity":               {"endpoint", "id", "name", "object"},
+	"capacity_usage":         {"endpoint", "id", "name", "object"},
+	"snapshot_used_capacity": {"endpoint", "id", "name", "object"},
 }
 var filesystemObjectMetricsHelpMap = map[string]string{
-	"capacity":       "filesystem capacity(GB)",
-	"capacity_usage": "filesystem capacity usage(%)",
+	"capacity":               "filesystem capacity(GB)",
+	"capacity_usage":         "filesystem capacity usage(%)",
+	"snapshot_used_capacity": "filesystem snapshot used capacity(GB)",
 }
 
 var filesystemObjectMetricsParseMap = map[string]parseRelation{
-	"capacity":       {"CAPACITY", parseStorageSectorsToGB},
-	"capacity_usage": {"", parseFilesystemCapacityUsage},
+	"capacity":               {"CAPACITY", parseStorageSectorsToGB},
+	"capacity_usage":         {"", parseFilesystemCapacityUsage},
+	"snapshot_used_capacity": {filesystemSnapshotCapacityKey, parseStorageSectorsToGB},
 }
 var filesystemObjectLabelParseMap = map[string]parseRelation{
 	"endpoint": {"backendName", parseStorageData},
@@ -113,5 +118,10 @@ func parseFilesystemCapacityUsage(inDataKey, metricsName string, inData map[stri
 	if err != nil {
 		return ""
 	}
-	return strconv.FormatFloat(usedCapacity/capacity*calculatePercentage, 'f', unlimitedPrecision, bitSize)
+	snapshotReserveCapacity, err := strconv.ParseFloat(inData[snapshotReserveCapacityKey], bitSize)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatFloat(usedCapacity/(capacity-snapshotReserveCapacity)*calculatePercentage, 'f',
+		unlimitedPrecision, bitSize)
 }

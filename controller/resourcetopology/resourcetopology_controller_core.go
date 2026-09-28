@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 
 	apiXuanwuV1 "github.com/huawei/csm/v2/client/apis/xuanwu/v1"
 	"github.com/huawei/csm/v2/controller/utils/cmi"
-	grpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	"github.com/huawei/csm/v2/utils/log"
 )
 
@@ -38,7 +38,7 @@ func (ctrl *Controller) UpdateResourceTopologiesStatus(ctx context.Context,
 
 // CmiCreateLabel create label by cmi grpc connection
 func (ctrl *Controller) CmiCreateLabel(ctx context.Context, params *cmi.Params) error {
-	request := &grpc.CreateLabelRequest{
+	request := &cmicore.LabelRequest{
 		VolumeId:  params.VolumeId(),
 		LabelName: params.LabelName(),
 		Kind:      params.Kind(),
@@ -51,7 +51,7 @@ func (ctrl *Controller) CmiCreateLabel(ctx context.Context, params *cmi.Params) 
 	if params.Namespace() != "" {
 		request.Namespace = params.Namespace()
 	}
-	_, err := ctrl.cmiClient.LabelClient.CreateLabel(ctx, request)
+	err := ctrl.core.CreateLabel(ctx, request)
 	if err != nil {
 		log.AddContext(ctx).Errorf("create label [%v] on storage failed: [%v]", params, err)
 		return err
@@ -62,7 +62,7 @@ func (ctrl *Controller) CmiCreateLabel(ctx context.Context, params *cmi.Params) 
 
 // CmiDeleteLabel delete label by cmi grpc connection
 func (ctrl *Controller) CmiDeleteLabel(ctx context.Context, params *cmi.Params) error {
-	request := &grpc.DeleteLabelRequest{
+	request := &cmicore.LabelRequest{
 		VolumeId:  params.VolumeId(),
 		LabelName: params.LabelName(),
 		Kind:      params.Kind(),
@@ -72,7 +72,7 @@ func (ctrl *Controller) CmiDeleteLabel(ctx context.Context, params *cmi.Params) 
 		request.Namespace = params.Namespace()
 	}
 
-	_, err := ctrl.cmiClient.LabelClient.DeleteLabel(ctx, request)
+	err := ctrl.core.DeleteLabel(ctx, request)
 	if err != nil {
 		log.AddContext(ctx).Errorf("delete label [%v] on storage failed: [%v]", params, err)
 		return err

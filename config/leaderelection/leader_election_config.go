@@ -19,17 +19,20 @@ import (
 	"time"
 
 	"github.com/spf13/pflag"
+	"k8s.io/client-go/rest"
 
 	confConsts "github.com/huawei/csm/v2/config/consts"
 )
 
 const (
-	leaderElectionOptionName   = "LeaderElectionOption"
-	defaultLeaderLockNamespace = "default"
-	defaultLeaderLeaseDuration = 8 * time.Second
-	defaultLeaderRenewDeadline = 6 * time.Second
-	defaultLeaderRetryPeriod   = 2 * time.Second
-	enableLeaderElection       = false
+	leaderElectionOptionName          = "LeaderElectionOption"
+	defaultLeaderLockNamespace        = "default"
+	defaultLeaderLeaseDuration        = 15 * time.Second
+	defaultLeaderRenewDeadline        = 10 * time.Second
+	defaultLeaderRetryPeriod          = 5 * time.Second
+	enableLeaderElection              = false
+	defaultLeaderElectionKubeAPIQPS   = 50
+	defaultLeaderElectionKubeAPIBurst = 100
 )
 
 // Option is a client option instance for manager init
@@ -90,4 +93,13 @@ func EnableLeaderElection() bool {
 // GetLeaderLockNamespace returns the leader lock namespace
 func GetLeaderLockNamespace() string {
 	return Option.leaderLockNamespace
+}
+
+// ApplyLeaderElectionQPSBurst applies fixed election QPS and Burst settings to the given rest.Config
+func ApplyLeaderElectionQPSBurst(config *rest.Config) {
+	if config == nil {
+		return
+	}
+	config.QPS = float32(defaultLeaderElectionKubeAPIQPS)
+	config.Burst = defaultLeaderElectionKubeAPIBurst
 }

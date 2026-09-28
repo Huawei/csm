@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,14 +23,14 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 )
 
 // volumeHandle str is sbcName.storageName. So when use strings.Split, volumeHandleStrLen is 2.
 const volumeHandleStrLen = 2
 
 type parsePVMetrics struct {
-	collectDetail *storageGRPC.CollectDetail
+	collectDetail *cmicore.CollectDetail
 	parseError    error
 }
 

@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ const (
 
 	// VolumeHandleKeyLabel is label key used to search volume handle
 	VolumeHandleKeyLabel = "volumehandlekey"
+
+	// ProviderCMI is the provider name of cmi service
+	ProviderCMI = "cmi.huawei.com"
 )
 
 // SupportedType contains all the storage volume type CSM supported

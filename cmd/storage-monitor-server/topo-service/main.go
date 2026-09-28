@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -20,14 +20,15 @@ import (
 	"os"
 	"syscall"
 
-	sbcInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	k8sInformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/scheme"
 
+	sbcInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions"
 	"github.com/huawei/csm/v2/config"
 	clientConfig "github.com/huawei/csm/v2/config/client"
+	"github.com/huawei/csm/v2/config/cmi"
 	"github.com/huawei/csm/v2/config/common"
 	leaderElectionConfig "github.com/huawei/csm/v2/config/leaderelection"
 	logConfig "github.com/huawei/csm/v2/config/log"
@@ -54,8 +55,8 @@ var topoService = &cobra.Command{
 }
 
 func main() {
-	manager := config.NewOptionManager(topoService.Flags(),
-		logConfig.Option, controllerConfig.Option, leaderElectionConfig.Option, clientConfig.Option, common.Option)
+	manager := config.NewOptionManager(topoService.Flags(), logConfig.Option,
+		controllerConfig.Option, leaderElectionConfig.Option, clientConfig.Option, common.Option, cmi.Option)
 	manager.AddFlags()
 
 	topoService.Run = func(cmd *cobra.Command, args []string) {
@@ -80,11 +81,12 @@ func main() {
 
 		ctx := context.WithValue(context.Background(), "controller", "resourceTopologyController")
 
-		clientsSet, err := utils.NewClientsSet(clientConfig.GetKubeConfig(), controllerConfig.GetCmiAddress())
+		clientsSet, err := utils.NewClientsSet(clientConfig.GetKubeConfig())
 		if err != nil {
 			log.Errorf("new client set error: [%v]", err)
 			return
 		}
+		defer utils.DeleteClientsSet(clientsSet)
 
 		signalChan := make(chan os.Signal, 1)
 		defer close(signalChan)
@@ -149,7 +151,7 @@ func runController(ctx context.Context, clients *utils.ClientsSet, ch chan os.Si
 		BackendInformer:  sbcFactory.Xuanwu().V1().StorageBackendClaims(),
 		ReSyncPeriod:     controllerConfig.GetResyncPeriod(),
 		EventRecorder:    clients.EventRecorder,
-		CmiClient:        clients.CmiClient,
+		Core:             clients.Core,
 	})
 
 	run := func(ctx context.Context) {

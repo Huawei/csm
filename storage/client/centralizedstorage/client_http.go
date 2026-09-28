@@ -75,14 +75,10 @@ func (c *CentralizedClient) callCentralizedStorage(ctx context.Context, method s
 
 func (c *CentralizedClient) baseCall(ctx context.Context, method string,
 	methodUrl string, reqData map[string]interface{}) (*Response, error) {
-	c.Semaphore.Acquire()
-	defer c.Semaphore.Release()
-	log.AddContext(ctx).Infof("%s call semaphore: %d", c.Curl, c.Semaphore.AvailablePermits())
-
 	url := c.getRequestUrl(methodUrl)
 	response, err := c.Call(ctx, method, url, reqData)
 	if err != nil && strings.Contains(err.Error(), "x509") {
-		if err = c.initHttpClient(ctx); err != nil {
+		if err = c.Client.InitHttpClient(ctx); err != nil {
 			return nil, err
 		}
 

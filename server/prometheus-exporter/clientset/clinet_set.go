@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,15 +18,19 @@
 package clientset
 
 import (
+	"context"
 	"sync"
 
-	sbcXuanwuClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
+	sbcXuanwuClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
 	clientConfig "github.com/huawei/csm/v2/config/client"
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	cmiConfig "github.com/huawei/csm/v2/config/cmi"
+	exporterConfig "github.com/huawei/csm/v2/config/exporter"
+	leaderElectionConfig "github.com/huawei/csm/v2/config/leaderelection"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	"github.com/huawei/csm/v2/utils/log"
 )
 
@@ -38,8 +42,10 @@ type ClientsSet struct {
 	KubeClient *kubernetes.Clientset
 	// SbcClient get backend client
 	SbcClient *sbcXuanwuClient.Clientset
-	// StorageGRPCClientSet From grpc get storage data client
-	StorageGRPCClientSet *storageGRPC.ClientSet
+	// Core is the cmicore instance for storage operations
+	Core *cmicore.Core
+	// ElectionKubeClient is the dedicated KubeClient for leader election
+	ElectionKubeClient *kubernetes.Clientset
 	// InitError when init error this will set the reason
 	InitError error
 }
@@ -88,23 +94,46 @@ func initKubeClientAndSbcClient() {
 	}
 	exporterClientSet.KubeClient = kubeClient
 	exporterClientSet.SbcClient = sbcClient
+
+	electionConfig := rest.CopyConfig(kubeConfig)
+	leaderElectionConfig.ApplyLeaderElectionQPSBurst(electionConfig)
+	electionKubeClient, err := kubernetes.NewForConfig(electionConfig)
+	if err != nil {
+		log.Errorf("init election kube client failed, err: [%v]", err)
+		exporterClientSet.InitError = err
+		return
+	}
+	exporterClientSet.ElectionKubeClient = electionKubeClient
+
 	return
 }
 
 // InitExporterClientSet return exporterClientSet. if it not init we will do it
-func InitExporterClientSet(grpcSock string) *ClientsSet {
+func InitExporterClientSet() *ClientsSet {
 	if exporterClientSet == nil {
 		log.Infoln("start to initExporterClientSet")
 		once.Do(func() {
 			exporterClientSet = &ClientsSet{}
-			grpcClientSet, err := storageGRPC.GetClientSet(grpcSock)
-			if err != nil {
-				log.Errorln("can not get Client")
+			initKubeClientAndSbcClient()
+			if exporterClientSet.InitError != nil {
+				return
+			}
+
+			// Initialize cmicore
+			coreConfig := &cmicore.CoreConfig{
+				KubeClient:           exporterClientSet.KubeClient,
+				SbcClient:            exporterClientSet.SbcClient,
+				BackendNamespace:     exporterConfig.GetStorageBackendNamespace(),
+				QueryStoragePageSize: cmiConfig.GetQueryStoragePageSize(),
+				ClientMaxThreads:     cmiConfig.GetClientMaxThreads(),
+			}
+			core := cmicore.NewCore(coreConfig)
+			if err := core.Start(context.Background()); err != nil {
+				log.Errorln("start cmicore failed")
 				exporterClientSet.InitError = err
 				return
 			}
-			exporterClientSet.StorageGRPCClientSet = grpcClientSet
-			initKubeClientAndSbcClient()
+			exporterClientSet.Core = core
 		})
 	} else {
 		log.Debugln("initExporterClientSet is already call")
@@ -117,15 +146,8 @@ func DeleteExporterClientSet() {
 	if exporterClientSet == nil {
 		return
 	}
-	if exporterClientSet.StorageGRPCClientSet == nil {
+	if exporterClientSet.Core == nil {
 		return
 	}
-	if exporterClientSet.StorageGRPCClientSet.Conn == nil {
-		return
-	}
-	err := exporterClientSet.StorageGRPCClientSet.Conn.Close()
-	if err != nil {
-		log.Errorln("can not delete storage grpc Client")
-		return
-	}
+	exporterClientSet.Core.Stop()
 }

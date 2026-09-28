@@ -20,6 +20,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 
@@ -64,7 +65,7 @@ func TestCentralizedClient_GetPerformanceByPost_RetrySuccess(t *testing.T) {
 				return mockRetryResponse, nil
 			}
 			return mockSuccessResponse, nil
-		})
+		}).ApplyFuncReturn(time.Sleep)
 
 	// action
 	_, err := centralizedCli.GetPerformanceByPost(context.Background(), 40, []int{})

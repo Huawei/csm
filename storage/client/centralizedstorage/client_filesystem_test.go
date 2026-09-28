@@ -22,6 +22,7 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/agiledragon/gomonkey/v2"
 
@@ -100,7 +101,7 @@ func TestGetFileSystemByNameWhenResponseErrorThenFailed(t *testing.T) {
 		func(_ *client.Client, ctx context.Context, method string,
 			url string, reqData map[string]interface{}) (map[string]interface{}, error) {
 			return response, nil
-		})
+		}).ApplyFuncReturn(time.Sleep)
 	defer httpGet.Reset()
 
 	centralizedCli := &CentralizedClient{

@@ -80,4 +80,22 @@ const (
 
 	// StorageV6PointReleasePrefix defines the number of storage version which supported point version
 	StorageV6PointReleasePrefix = "6"
+
+	// FusionStorage is a storage type fusionStorage (distributed storage).
+	FusionStorage = "fusionStorage"
+
+	// Namespace is a collect type namespace.
+	Namespace = "namespace"
+
+	// StorageFusionNas is a storage volume type fusionstorage-nas.
+	StorageFusionNas = "fusionstorage-nas"
+
+	// ResourceTypeNamespace is a resource type means namespace.
+	ResourceTypeNamespace = "57356"
+
+	// DefaultBitSize defines the default bit size of calculation
+	DefaultBitSize = 64
+
+	// UnlimitedPrecision defines the unlimited precision of calculation
+	UnlimitedPrecision = -1
 )

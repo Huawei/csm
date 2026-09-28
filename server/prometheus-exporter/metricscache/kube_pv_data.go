@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import (
 	"errors"
 	"strings"
 
-	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
 	"github.com/huawei/csm/v2/utils/log"
 )
@@ -101,14 +101,14 @@ func getAllBackendFromApi(ctx context.Context) map[string]map[string]string {
 }
 
 func buildOutPVData(ctx context.Context, backendName, collectType string, allSBCInfo map[string]map[string]string,
-	allPVData []coreV1.PersistentVolume) *storageGRPC.CollectResponse {
-	outPVData := &storageGRPC.CollectResponse{
+	allPVData []coreV1.PersistentVolume) *cmicore.CollectResponse {
+	outPVData := &cmicore.CollectResponse{
 		BackendName: backendName,
 		CollectType: collectType,
-		Details:     []*storageGRPC.CollectDetail{}}
+		Details:     []*cmicore.CollectDetail{}}
 	for _, pvData := range allPVData {
 		pvMapInfo := &parsePVMetrics{
-			collectDetail: &storageGRPC.CollectDetail{Data: make(map[string]string)}}
+			collectDetail: &cmicore.CollectDetail{Data: make(map[string]string)}}
 		pvMapInfo.setCSIDriverNameMetrics(pvData).
 			setVolumeHandleMetrics(pvData).
 			setPVNameMetrics(pvData).
@@ -136,7 +136,7 @@ func buildOutPVData(ctx context.Context, backendName, collectType string, allSBC
 }
 
 // GetAndParsePVInfo gets and parses pv info with special collect type
-func GetAndParsePVInfo(ctx context.Context, backendName, collectType string) (*storageGRPC.CollectResponse, error) {
+func GetAndParsePVInfo(ctx context.Context, backendName, collectType string) (*cmicore.CollectResponse, error) {
 	allPVData := getPVDataFromApi(ctx)
 	if len(allPVData) == 0 {
 		return nil, errors.New("can not get pv data, pv is empty")

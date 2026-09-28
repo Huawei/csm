@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
+	"github.com/stretchr/testify/assert"
 	fakeDynamicClient "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -29,6 +30,7 @@ import (
 
 	xuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned"
 	fakeXuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned/fake"
+	"github.com/huawei/csm/v2/provider/cmicore"
 )
 
 func TestNewClientsSet_EmptyConfigEmptyInitFuncList_Success(t *testing.T) {
@@ -45,7 +47,7 @@ func TestNewClientsSet_EmptyConfigEmptyInitFuncList_Success(t *testing.T) {
 	}).ApplyGlobalVar(&initFuncList, []func(*ClientsSet) error{})
 
 	// act
-	clients, err := NewClientsSet(config, "")
+	clients, err := NewClientsSet(config)
 
 	// assert
 	if err != nil {
@@ -96,7 +98,7 @@ func TestNewClientsSet_EmptyConfig_Success(t *testing.T) {
 	})
 
 	// act
-	clients, err := NewClientsSet(config, "")
+	clients, err := NewClientsSet(config)
 
 	// assert
 	if err != nil {
@@ -126,7 +128,7 @@ func TestNewClientsSet_EmptyConfigEmptyInitFuncList_Fail(t *testing.T) {
 	}).ApplyGlobalVar(&initFuncList, []func(*ClientsSet) error{})
 
 	// act
-	clients, err := NewClientsSet(config, "/cmi/cmi.sock")
+	clients, err := NewClientsSet(config)
 
 	// assert
 	if reflect.DeepEqual(err, wantErr) {
@@ -160,7 +162,7 @@ func TestNewClientsSet_EmptyConfigInitFuncErr_Fail(t *testing.T) {
 	})
 
 	// act
-	clients, err := NewClientsSet(config, "/cmi/cmi.sock")
+	clients, err := NewClientsSet(config)
 
 	// assert
 	if reflect.DeepEqual(err, wantErr) {
@@ -174,6 +176,83 @@ func TestNewClientsSet_EmptyConfigInitFuncErr_Fail(t *testing.T) {
 	t.Cleanup(func() {
 		mock.Reset()
 	})
+}
+
+func Test_initElectionKubeClient_NilClient_Success(t *testing.T) {
+	// arrange
+	c := &ClientsSet{Config: &rest.Config{}}
+	want := &ClientsSet{Config: &rest.Config{}, ElectionKubeClient: &kubernetes.Clientset{}}
+
+	// mock
+	mock := gomonkey.NewPatches()
+
+	// expect
+	mock.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+		return &kubernetes.Clientset{}, nil
+	})
+
+	// act
+	err := initElectionKubeClient(c)
+
+	// assert
+	if err != nil {
+		t.Errorf("Test_initElectionKubeClient_NilClient_Success err: [%v]", err)
+	}
+	if !reflect.DeepEqual(c, want) {
+		t.Errorf("Test_initElectionKubeClient_NilClient_Success failed: want: [%v], got: [%v]", want, c)
+	}
+
+	// cleanup
+	t.Cleanup(func() {
+		mock.Reset()
+	})
+}
+
+func Test_initElectionKubeClient_NilClient_Fail(t *testing.T) {
+	// arrange
+	c := &ClientsSet{Config: &rest.Config{}}
+	wantErr := errors.New("fake error")
+
+	// mock
+	mock := gomonkey.NewPatches()
+
+	// expect
+	mock.ApplyFunc(kubernetes.NewForConfig, func(c *rest.Config) (*kubernetes.Clientset, error) {
+		return nil, errors.New("fake error")
+	})
+
+	// act
+	gotErr := initElectionKubeClient(c)
+
+	// assert
+	if !reflect.DeepEqual(gotErr, wantErr) {
+		t.Errorf("Test_initElectionKubeClient_NilClient_Fail failed: wantErr: [%v], gotErr: [%v]", gotErr, wantErr)
+	}
+	if c.ElectionKubeClient != nil {
+		t.Error("Test_initElectionKubeClient_NilClient_Fail failed, election kube client should be nil")
+	}
+
+	// cleanup
+	t.Cleanup(func() {
+		mock.Reset()
+	})
+}
+
+func Test_initElectionKubeClient_WithClient_Success(t *testing.T) {
+	// arrange
+	electionKubeClient := &kubernetes.Clientset{}
+	c := &ClientsSet{Config: &rest.Config{}, ElectionKubeClient: electionKubeClient}
+
+	// act
+	err := initElectionKubeClient(c)
+
+	// assert
+	if err != nil {
+		t.Errorf("Test_initElectionKubeClient_WithClient_Success failed, err: [%v]", err)
+	}
+	if c.ElectionKubeClient != electionKubeClient {
+		t.Error("Test_initElectionKubeClient_WithClient_Success failed, election kube client changed")
+	}
 }
 
 func Test_initKubeClient_NilClient_Success(t *testing.T) {
@@ -328,4 +407,85 @@ func Test_initCsiClient_WithClient_Success(t *testing.T) {
 	if c.XuanwuClient != csiClient {
 		t.Error("Test_initCsiClient_WithClient_Success failed, csi client changed")
 	}
+}
+
+func TestClientsSet_initCore_AlreadyInitialized_Success(t *testing.T) {
+	// arrange
+	core := cmicore.NewCore(&cmicore.CoreConfig{
+		BackendNamespace:     "huawei-csi",
+		QueryStoragePageSize: 100,
+		ClientMaxThreads:     20,
+	})
+	c := &ClientsSet{Core: core}
+
+	// action
+	gotErr := initCore(c)
+
+	// assert
+	assert.NoError(t, gotErr)
+	assert.Equal(t, core, c.Core)
+}
+
+func TestClientsSet_initCore_StartFailed(t *testing.T) {
+	// arrange
+	c := &ClientsSet{KubeClient: fake.NewSimpleClientset()}
+
+	patches := gomonkey.NewPatches()
+	patches.ApplyMethodReturn(&cmicore.Core{}, "Start", errors.New("cmicore start error"))
+	patches.ApplyMethodReturn(&cmicore.Core{}, "Stop")
+	defer patches.Reset()
+
+	// action
+	gotErr := initCore(c)
+
+	// assert
+	assert.Error(t, gotErr)
+	assert.Contains(t, gotErr.Error(), "start cmicore failed")
+}
+
+func TestClientsSet_initCore_Success(t *testing.T) {
+	// arrange
+	c := &ClientsSet{KubeClient: fake.NewSimpleClientset()}
+
+	patches := gomonkey.NewPatches()
+	patches.ApplyMethodReturn(&cmicore.Core{}, "Start", nil)
+	patches.ApplyMethodReturn(&cmicore.Core{}, "Stop")
+	defer patches.Reset()
+
+	// action
+	gotErr := initCore(c)
+
+	// assert
+	assert.NoError(t, gotErr)
+	assert.NotNil(t, c.Core)
+}
+
+func TestDeleteClientsSet_NilClientsSet(t *testing.T) {
+	// action
+	DeleteClientsSet(nil)
+}
+
+func TestDeleteClientsSet_NilCore(t *testing.T) {
+	// arrange
+	c := &ClientsSet{}
+
+	// action
+	DeleteClientsSet(c)
+}
+
+func TestDeleteClientsSet_Success(t *testing.T) {
+	// arrange
+	patches := gomonkey.NewPatches()
+	patches.ApplyMethodReturn(&cmicore.Core{}, "Stop")
+	defer patches.Reset()
+
+	core := cmicore.NewCore(&cmicore.CoreConfig{
+		BackendNamespace:     "huawei-csi",
+		QueryStoragePageSize: 100,
+		ClientMaxThreads:     20,
+	})
+	c := &ClientsSet{Core: core}
+
+	// action
+	DeleteClientsSet(c)
 }

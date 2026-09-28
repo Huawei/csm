@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
 	"github.com/huawei/csm/v2/utils/log"
 )
@@ -33,14 +33,6 @@ type StorageMetricsData struct {
 	*BaseMetricsData
 }
 
-func init() {
-	RegisterMetricsData("array", NewStorageMetricsData)
-	RegisterMetricsData("controller", NewStorageMetricsData)
-	RegisterMetricsData("storagepool", NewStorageMetricsData)
-	RegisterMetricsData("filesystem", NewStorageMetricsData)
-	RegisterMetricsData("lun", NewStorageMetricsData)
-}
-
 // NewStorageMetricsData new a StorageMetricsData
 func NewStorageMetricsData(backendName, metricsType string) (MetricsData, error) {
 	return &StorageMetricsData{BaseMetricsData: &BaseMetricsData{
@@ -48,8 +40,8 @@ func NewStorageMetricsData(backendName, metricsType string) (MetricsData, error)
 }
 
 func (storageMetricsData *StorageMetricsData) buildTheStorageGRPCRequest(
-	collectorName, monitorType string, metricsIndicators []string) *storageGRPC.CollectRequest {
-	batchCollectRequest := &storageGRPC.CollectRequest{
+	collectorName, monitorType string, metricsIndicators []string) *cmicore.CollectRequest {
+	batchCollectRequest := &cmicore.CollectRequest{
 		BackendName: storageMetricsData.BackendName,
 		CollectType: collectorName,
 		MetricsType: monitorType,
@@ -68,10 +60,9 @@ func (storageMetricsData *StorageMetricsData) buildTheStorageGRPCRequest(
 }
 
 func (storageMetricsData *StorageMetricsData) getStorageData(ctx context.Context,
-	batchCollectRequest *storageGRPC.CollectRequest,
-	usedClientSet *clientSet.ClientsSet) (*storageGRPC.CollectResponse, error) {
-	storageGRPCClient := usedClientSet.StorageGRPCClientSet.CollectorClient
-	batchCollectResponse, err := storageGRPCClient.Collect(ctx, batchCollectRequest)
+	batchCollectRequest *cmicore.CollectRequest,
+	usedClientSet *clientSet.ClientsSet) (*cmicore.CollectResponse, error) {
+	batchCollectResponse, err := usedClientSet.Core.Collect(ctx, batchCollectRequest)
 	if err != nil {
 		return nil, fmt.Errorf("can not get storage response the err is [%w]", err)
 	}

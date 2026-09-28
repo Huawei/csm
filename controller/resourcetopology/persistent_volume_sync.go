@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2024-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apiXuanwuV1 "github.com/huawei/csm/v2/client/apis/xuanwu/v1"
-	"github.com/huawei/csm/v2/config/cmi"
 	"github.com/huawei/csm/v2/controller/utils"
 	"github.com/huawei/csm/v2/controller/utils/consts"
 	"github.com/huawei/csm/v2/utils/log"
@@ -95,7 +94,7 @@ func (ctrl *Controller) createResourceTopology(ctx context.Context,
 	rtLabels[consts.VolumeHandleKeyLabel] = utils.EncryptMD5(pv.Spec.CSI.VolumeHandle)
 
 	topologySpec := apiXuanwuV1.ResourceTopologySpec{
-		Provisioner:  cmi.GetProviderName(),
+		Provisioner:  consts.ProviderCMI,
 		VolumeHandle: pv.Spec.CSI.VolumeHandle,
 		Tags: []apiXuanwuV1.Tag{
 			{

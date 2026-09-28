@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,17 +22,31 @@ import (
 	"fmt"
 	"strings"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
+	"github.com/huawei/csm/v2/provider/constants"
+	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
 	"github.com/huawei/csm/v2/utils/log"
 )
 
 var storageTypeMap = map[string]string{
-	"oceanstor-san": "lun",
-	"oceanstor-nas": "filesystem",
+	constants.StorageSan:       constants.Lun,
+	constants.StorageNas:       constants.Filesystem,
+	constants.StorageFusionNas: constants.Namespace,
 }
+
+// storageTypeToCollectTypes maps Core storage type to the collect types
+// supported by that storage family. Used by buildPVBatchParams to avoid
+// requesting unsupported collect types (e.g. "lun"/"filesystem" for FusionStorage).
+var storageTypeToCollectTypes = map[string][]string{
+	constants.OceanStorage:  {constants.Lun, constants.Filesystem},
+	constants.FusionStorage: {constants.Namespace},
+}
+
 var pvPerformanceMap = map[string][]string{
-	"lun":        {"21,22,370"},
-	"filesystem": {"182,524,525"},
+	constants.Lun:        {"21,22,370"},
+	constants.Filesystem: {"182,524,525"},
+	constants.Namespace: {"30001,30002,30003,30004,30005,30006,30011,30012,30013,30014,30015,30016,30076,30077," +
+		"30043,30044,30045,30046,30048,30049,30051,30052,31005"},
 }
 
 // MetricsDataCache save one batch data from prometheus request
@@ -43,7 +57,7 @@ type MetricsDataCache struct {
 }
 
 // GetMetricsData get the CollectResponse from storage
-func (metricsDataCache *MetricsDataCache) GetMetricsData(metricsType string) *storageGRPC.CollectResponse {
+func (metricsDataCache *MetricsDataCache) GetMetricsData(metricsType string) *cmicore.CollectResponse {
 	if _, ok := metricsDataCache.CacheDataMap[metricsType]; !ok {
 		return nil
 	}
@@ -72,7 +86,7 @@ func (metricsDataCache *MetricsDataCache) SetBatchDataFromSource(ctx context.Con
 
 		err := metricsData.SetMetricsData(ctx, collectorName, monitorType, metricsIndicators)
 		if err != nil {
-			log.AddContext(ctx).Errorf("set metrics data for %s failed, err is [%v], try to collect next data",
+			log.AddContext(ctx).Warningf("set metrics data for %s failed, err is [%v], try to collect next data",
 				collectorName, err)
 			continue
 		}
@@ -95,6 +109,28 @@ func (metricsDataCache *MetricsDataCache) MergeBatchData(ctx context.Context) {
 		}
 	}
 	log.AddContext(ctx).Infoln("merge metrics data success")
+}
+
+// getCollectTypesForBackend queries the Core for the backend's storage type
+// and returns the supported collect types. Returns an error if the backend
+// is not found in the client cache or the storage type is unmapped.
+func getCollectTypesForBackend(backendName string) ([]string, error) {
+	usedClientSet := clientSet.GetExporterClientSet()
+	if usedClientSet == nil || usedClientSet.Core == nil {
+		return nil, fmt.Errorf("exporter client set or Core not initialized")
+	}
+
+	storageType, err := usedClientSet.Core.GetStorageType(backendName)
+	if err != nil {
+		return nil, err
+	}
+
+	collectTypes, ok := storageTypeToCollectTypes[storageType]
+	if !ok {
+		return nil, fmt.Errorf("unknown storage type [%s] for backend [%s]", storageType, backendName)
+	}
+
+	return collectTypes, nil
 }
 
 func (metricsDataCache *MetricsDataCache) buildPVBatchParams(ctx context.Context,
@@ -124,8 +160,16 @@ func (metricsDataCache *MetricsDataCache) buildPVBatchParams(ctx context.Context
 			batchParams[metrics] = metricsIndicators
 		}
 	} else {
-		batchParams["lun"] = []string{""}
-		batchParams["filesystem"] = []string{""}
+		// Determine collect types dynamically based on backend storage type
+		collectTypes, err := getCollectTypesForBackend(metricsDataCache.BackendName)
+		if err != nil {
+			log.AddContext(ctx).Warningf("failed to get collect types for backend [%s], "+
+				"err is [%v], falling back to all types", metricsDataCache.BackendName, err)
+			collectTypes = []string{constants.Lun, constants.Filesystem, constants.Namespace}
+		}
+		for _, collectType := range collectTypes {
+			batchParams[collectType] = []string{""}
+		}
 	}
 	return nil
 }

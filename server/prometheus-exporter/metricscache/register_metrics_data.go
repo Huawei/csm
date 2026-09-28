@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package metricscache
 import (
 	"context"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 )
 
 // a MetricsData constructor
@@ -44,7 +44,7 @@ func RegisterMetricsData(collectorName string, factory metricsCacheInitFunc) {
 
 // MetricsData set metrics data, get data from storage and kubernetes
 type MetricsData interface {
-	GetMetricsDataResponse() *storageGRPC.CollectResponse
+	GetMetricsDataResponse() *cmicore.CollectResponse
 	SetMetricsData(ctx context.Context, collectorName, monitorType string, metricsIndicators []string) error
 }
 
@@ -52,11 +52,11 @@ type MetricsData interface {
 type BaseMetricsData struct {
 	BackendName         string
 	MetricsType         string
-	MetricsDataResponse *storageGRPC.CollectResponse
+	MetricsDataResponse *cmicore.CollectResponse
 }
 
 // GetMetricsDataResponse implement MetricsData interface, get MetricsDataResponse
-func (baseMetricsData *BaseMetricsData) GetMetricsDataResponse() *storageGRPC.CollectResponse {
+func (baseMetricsData *BaseMetricsData) GetMetricsDataResponse() *cmicore.CollectResponse {
 	return baseMetricsData.MetricsDataResponse
 }
 

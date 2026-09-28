@@ -19,6 +19,12 @@ rules:
   - apiGroups: [ "xuanwu.huawei.io" ]
     resources: [ "storagebackendclaims","storagebackendcontents" ]
     verbs: [ "get","list" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "get", "update" ]
 
 ---
 kind: ClusterRoleBinding
@@ -34,40 +40,6 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: prometheus-collector-role
-  apiGroup: rbac.authorization.k8s.io
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: cmi-collector-role
-  labels:
-    app: csm-prometheus-service
-rules:
-  - apiGroups: [ "xuanwu.huawei.io" ]
-    resources: [ "storagebackendclaims" ]
-    verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "secrets" ]
-    verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "configmaps" ]
-    verbs: [ "create", "get", "update" ]
-
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cmi-collector-binding
-  labels:
-    app: csm-prometheus-service
-subjects:
-  - kind: ServiceAccount
-    name: csm-prometheus-sa
-    namespace: huawei-csm
-roleRef:
-  kind: ClusterRole
-  name: cmi-collector-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -117,7 +89,6 @@ spec:
       containers:
         - name: liveness-probe
           args:
-            - --cmi-address=/cmi/cmi.sock
             - --ip-address=[$(POD_IP)]
             - --healthz-port=9808
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
@@ -139,8 +110,6 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
           resources:
@@ -153,8 +122,6 @@ spec:
         - name: prometheus-collector
           image: csm-prometheus-collector:{{version}}
           env:
-            - name: ENDPOINT
-              value: /cmi/cmi.sock
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -166,7 +133,6 @@ spec:
                   fieldPath: status.podIP
           imagePullPolicy: IfNotPresent
           args:
-            - --cmi-address=$(ENDPOINT)
             - --ip-address=[$(POD_IP)]
             - --exporter-port=8887
             - --use-https=false    # modify the value to "true" if configured the SSL cert
@@ -181,8 +147,6 @@ spec:
             - --kube-api-qps=5
             - --kube-api-burst=10
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
             - mountPath: /etc/localtime
@@ -208,59 +172,7 @@ spec:
             limits:
               cpu: 300m
               memory: 512Mi
-        - name: cmi-controller
-          image: csm-cmi:{{version}}
-          env:
-            - name: ENDPOINT
-              value: /cmi/cmi.sock
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-          imagePullPolicy: IfNotPresent
-          args:
-            - --cmi-address=$(ENDPOINT)
-            - --cmi-name=cmi.huawei.com
-            - --page-size=100
-            - --backend-namespace=huawei-csi
-            - --kube-api-qps=5
-            - --kube-api-burst=10
-            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
-            - --log-file=cmi-service
-            - --logging-module=file
-            - --log-level=info
-            - --log-file-size=20M
-            - --max-backups=9
-          livenessProbe:
-            failureThreshold: 5
-            httpGet:
-              path: /healthz
-              port: healthz
-            initialDelaySeconds: 10
-            periodSeconds: 60
-            timeoutSeconds: 3
-          ports:
-            - containerPort: 9808
-              name: healthz
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
-            - mountPath: /var/log/
-              name: log
-            - mountPath: /etc/localtime
-              name: host-time
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
-              cpu: 300m
-              memory: 512Mi
       volumes:
-        - emptyDir: { }
-          name: socket-dir
         - hostPath:
             path: /var/log/
             type: Directory

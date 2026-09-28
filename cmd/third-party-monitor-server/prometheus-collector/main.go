@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -19,15 +19,20 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/huawei/csm/v2/config"
 	clientConfig "github.com/huawei/csm/v2/config/client"
+	"github.com/huawei/csm/v2/config/cmi"
 	"github.com/huawei/csm/v2/config/common"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
 	logConfig "github.com/huawei/csm/v2/config/log"
+	_ "github.com/huawei/csm/v2/provider/collectdef/defs"
 	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
 	exporterHandler "github.com/huawei/csm/v2/server/prometheus-exporter/exporterhandler"
 	"github.com/huawei/csm/v2/utils/log"
@@ -52,7 +57,7 @@ var prometheusExporter = &cobra.Command{
 
 func main() {
 	manager := config.NewOptionManager(prometheusExporter.Flags(), logConfig.Option, clientConfig.Option,
-		exporterConfig.Option, common.Option)
+		exporterConfig.Option, common.Option, cmi.Option)
 	manager.AddFlags()
 
 	prometheusExporter.Run = func(cmd *cobra.Command, args []string) {
@@ -101,31 +106,47 @@ func verifyStartInfo() error {
 }
 
 func initListener() error {
-	client := clientSet.InitExporterClientSet(exporterConfig.GetStorageGRPCSock())
+	client := clientSet.InitExporterClientSet()
 	if client.InitError != nil {
 		clientSet.DeleteExporterClientSet()
 		return fmt.Errorf("init exporter client set err: [%v]", client.InitError)
 	}
 
-	var err error
+	// Set up signal handling for graceful shutdown
+	signalChan := make(chan os.Signal, 1)
+	shutdownChan := make(chan struct{})
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-signalChan
+		log.Infoln("received shutdown signal, cleaning up...")
+		close(shutdownChan)
+	}()
+
 	http.HandleFunc("/", exporterHandler.MetricsHandler)
 	http.HandleFunc(healthz, exporterHandler.HealthHandler)
-	if exporterConfig.GetUseHttps() {
-		server := &http.Server{
-			Addr:    exporterConfig.GetIpAddress() + ":" + exporterConfig.GetExporterPort(),
-			Handler: nil,
-			TLSConfig: &tls.Config{
-				MinVersion: tls.VersionTLS12,
-			},
-		}
-		err = server.ListenAndServeTLS(httpsCert, httpsKey)
-	} else {
-		err = http.ListenAndServe(exporterConfig.GetIpAddress()+":"+exporterConfig.GetExporterPort(), nil)
+	server := &http.Server{
+		Addr: exporterConfig.GetIpAddress() + ":" + exporterConfig.GetExporterPort(),
+		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
 	}
 
-	if err != nil {
+	errCh := make(chan error, 1)
+	go func() {
+		if exporterConfig.GetUseHttps() {
+			errCh <- server.ListenAndServeTLS(httpsCert, httpsKey)
+		} else {
+			errCh <- server.ListenAndServe()
+		}
+	}()
+
+	select {
+	case <-shutdownChan:
+		clientSet.DeleteExporterClientSet()
+		return nil
+	case err := <-errCh:
 		clientSet.DeleteExporterClientSet()
 		return fmt.Errorf("start service error: %v", err)
 	}
-	return nil
 }

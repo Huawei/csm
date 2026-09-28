@@ -10,15 +10,6 @@ ARG binary=./csm-prometheus-collector
 COPY ${binary} csm-prometheus-collector
 ENTRYPOINT ["/csm-prometheus-collector"]
 
-FROM busybox:stable-glibc as csm-cmi
-LABEL version="${VER}"
-LABEL maintainers="Huawei CSM development team"
-LABEL description="Kubernetes CSM(cmi) for Huawei Storage"
-
-ARG binary=./csm-cmi
-COPY ${binary} csm-cmi
-ENTRYPOINT ["/csm-cmi"]
-
 FROM busybox:stable-glibc as csm-topo-service
 LABEL version="${VER}"
 LABEL maintainers="Huawei CSM development team"

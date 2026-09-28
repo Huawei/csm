@@ -1,9 +1,9 @@
 {{- define "leader-election" -}}
 {{- if gt ( (.Values.global).replicaCount | int ) 1 -}}
 - --enable-leader-election=true
-- --leader-lease-duration={{ ((.Values.global).leaderElection).leaseDuration | default "8s" }}
-- --leader-renew-deadline={{ ((.Values.global).leaderElection).renewDeadline | default "6s" }}
-- --leader-retry-period={{ ((.Values.global).leaderElection).retryPeriod | default "2s" }}
+- --leader-lease-duration={{ ((.Values.global).leaderElection).leaseDuration | default "15s" }}
+- --leader-renew-deadline={{ ((.Values.global).leaderElection).renewDeadline | default "10s" }}
+- --leader-retry-period={{ ((.Values.global).leaderElection).retryPeriod | default "5s" }}
 {{- else -}}
 - --enable-leader-election=false
 {{- end -}}

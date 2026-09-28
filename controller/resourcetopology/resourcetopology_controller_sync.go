@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package resourcetopology
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -32,17 +31,7 @@ import (
 	"github.com/huawei/csm/v2/controller/utils"
 	"github.com/huawei/csm/v2/controller/utils/cmi"
 	"github.com/huawei/csm/v2/controller/utils/consts"
-	grpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	"github.com/huawei/csm/v2/utils/log"
-)
-
-type provisioner struct {
-	provider   string
-	capability map[string]bool
-}
-
-var (
-	cmiProvisioner provisioner
 )
 
 func (ctrl *Controller) syncResourceTopology(ctx context.Context,
@@ -60,11 +49,6 @@ func (ctrl *Controller) syncResourceTopology(ctx context.Context,
 
 	addList, delList := getChangeList(resourceTopologyNew)
 	if len(addList) != 0 || len(delList) != 0 {
-		err = ctrl.provisionerCheck(ctx, resourceTopologyNew)
-		if err != nil {
-			return err
-		}
-
 		log.AddContext(ctx).Infof("new tags [%v], delete tags [%v]", addList, delList)
 		resourceTopologyNew, err = ctrl.handlePendingStatus(ctx, resourceTopologyNew, delList, addList)
 		if err != nil {
@@ -83,63 +67,6 @@ func (ctrl *Controller) syncResourceTopology(ctx context.Context,
 
 	// check resources
 	return ctrl.checkResourceTopology(ctx, resourceTopologyNew)
-}
-
-func (ctrl *Controller) provisionerCheck(ctx context.Context,
-	resourceTopology *apiXuanwuV1.ResourceTopology) error {
-	// check if using right provisioner name
-	err := ctrl.checkProvisionerName(ctx, resourceTopology)
-	if err != nil {
-		return err
-	}
-
-	// check if provisioner supports labels capability
-	err = ctrl.checkProvisionerCapability(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ctrl *Controller) checkProvisionerName(ctx context.Context,
-	resourceTopology *apiXuanwuV1.ResourceTopology) error {
-	if cmiProvisioner.provider == "" {
-		info, err := ctrl.cmiClient.IdentityClient.GetProvisionerInfo(ctx, &grpc.GetProviderInfoRequest{})
-		if err != nil {
-			return fmt.Errorf("error getting provisioner info: [%v]", err)
-		}
-
-		cmiProvisioner.provider = info.Provider
-	}
-
-	if resourceTopology.Spec.Provisioner == cmiProvisioner.provider {
-		return nil
-	}
-
-	return fmt.Errorf("provider not correct, in resourceTopology is [%s], from cmi got: [%s]",
-		resourceTopology.Spec.Provisioner, cmiProvisioner.provider)
-}
-
-func (ctrl *Controller) checkProvisionerCapability(ctx context.Context) error {
-	if cmiProvisioner.capability == nil || len(cmiProvisioner.capability) == 0 {
-		cmiProvisioner.capability = make(map[string]bool)
-		capabilities, err := ctrl.cmiClient.IdentityClient.GetProviderCapabilities(ctx,
-			&grpc.GetProviderCapabilitiesRequest{})
-		if err != nil {
-			return errors.New("error getting provider capabilities")
-		}
-
-		for _, capability := range capabilities.GetCapabilities() {
-			cmiProvisioner.capability[grpc.ProviderCapability_Type_name[int32(capability.Type)]] = true
-		}
-	}
-
-	if cmiProvisioner.capability[grpc.ProviderCapability_Type_name[int32(
-		grpc.ProviderCapability_ProviderCapability_Label_Service)]] {
-		return nil
-	}
-
-	return errors.New("cmi unsupported label capability")
 }
 
 func (ctrl *Controller) handlePendingStatus(ctx context.Context,

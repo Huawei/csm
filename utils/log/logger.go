@@ -25,8 +25,6 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -345,47 +343,6 @@ func (logger *loggerImpl) GetLevel() logrus.Level {
 	return logger.Logger.GetLevel()
 }
 
-// EnsureGRPCContext ensures adding request id in incoming unary grpc context
-func EnsureGRPCContext(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler) (interface{}, error) {
-	newCtx, err := HandleRequestId(ctx)
-	if err != nil {
-		return handler(ctx, req)
-	}
-
-	return handler(newCtx, req)
-}
-
-type serverStreamWithContext struct {
-	grpc.ServerStream
-	ctx context.Context
-}
-
-// Context implement context func of serverStreamWithContext
-func (ss serverStreamWithContext) Context() context.Context {
-	return ss.ctx
-}
-
-// NewServerStreamWithContext returns a new serverStreamWithContext
-func NewServerStreamWithContext(stream grpc.ServerStream, ctx context.Context) grpc.ServerStream {
-	return serverStreamWithContext{
-		ServerStream: stream,
-		ctx:          ctx,
-	}
-}
-
-// EnsureStreamGRPCContext ensures adding request id in incoming stream grpc context
-func EnsureStreamGRPCContext(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo,
-	handler grpc.StreamHandler) (err error) {
-	ctx := stream.Context()
-	newCtx, err := HandleRequestId(ctx)
-	if err != nil {
-		return handler(srv, NewServerStreamWithContext(stream, ctx))
-	}
-
-	return handler(srv, NewServerStreamWithContext(stream, newCtx))
-}
-
 // SetRequestInfo is used to set the context with requestID value
 func SetRequestInfo(ctx context.Context) (context.Context, error) {
 	randomID, err := rand.Prime(rand.Reader, 32)
@@ -394,33 +351,7 @@ func SetRequestInfo(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	// the requestID value in metadata can be transferred between services via grpc
-	ctx = metadata.AppendToOutgoingContext(ctx, xuanwuChainRequestID, randomID.String())
 	return context.WithValue(ctx, xuanWuRequestID, randomID.String()), nil
-}
-
-// HandleRequestId is used to handle the requestId when the context is transferred between services via grpc
-func HandleRequestId(ctx context.Context) (context.Context, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	// if ctx metadata not exist, generate one with metadata and value
-	if !ok {
-		Debugln("ctx not include metadata info, generate a new ctx with metadata and value")
-		return SetRequestInfo(ctx)
-	}
-
-	// If ctx metadata exist and metadata includes xuanwuRequestId info,
-	// then return ctx with value and append requestId to metadata again.
-	// When the service acts as a new client and connects to other server,
-	// the requestID information needs to be added to metadata again.
-	// So, the requestId can be transferred between multiple services.
-	if reqIDs, ok := md[xuanwuChainRequestID]; ok && len(reqIDs) == 1 {
-		ctx = metadata.AppendToOutgoingContext(ctx, xuanwuChainRequestID, reqIDs[0])
-		return context.WithValue(ctx, xuanWuRequestID, reqIDs[0]), nil
-	}
-
-	// if ctx metadata exist, but metadata not include requestId info, generate one with metadata and value
-	Debugln("ctx metadata not include requestId info, generate a new ctx with metadata and value")
-	return SetRequestInfo(ctx)
 }
 
 // Flush ensures to commit current content of logging stream

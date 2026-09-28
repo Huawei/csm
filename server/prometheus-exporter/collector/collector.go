@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -72,25 +71,6 @@ func (baseCollector *BaseCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, i := range baseCollector.metrics {
 		ch <- i
 	}
-}
-
-// NewPerformanceBaseCollector build a performance BaseCollector to other collector
-func NewPerformanceBaseCollector(backendName, monitorType, collectorName string, metricsIndicators []string,
-	metricsDataCache *metricsCache.MetricsDataCache) (*BaseCollector, error) {
-	if len(metricsIndicators) == 0 || metricsIndicators[0] == "" {
-		return nil, fmt.Errorf("can not create [%s] collector, "+
-			"the metricsIndicators is empty or error", collectorName)
-	}
-	metricsData := strings.Split(metricsIndicators[0], ",")
-	return (&BaseCollector{}).SetBackendName(backendName).
-		SetMonitorType(monitorType).
-		SetCollectorName(collectorName).
-		SetMetricsHelpMap(pickPerformanceParsMap[string](metricsData, performanceMetricsHelpMap)).
-		SetMetricsLabelMap(pickPerformanceParsMap[[]string](metricsData, performanceMetricsLabelMap)).
-		SetLabelParseMap(performanceLabelParseMap).
-		SetMetricsParseMap(pickPerformanceParsMap[parseRelation](metricsData, performanceMetricsParseMap)).
-		SetMetricsDataCache(metricsDataCache).
-		SetMetrics(make(map[string]*prometheus.Desc)), nil
 }
 
 func (baseCollector *BaseCollector) setPrometheusMetric(ctx context.Context, ch chan<- prometheus.Metric,
@@ -231,6 +211,21 @@ func (baseCollector *BaseCollector) SetMetricsDataCache(
 func (baseCollector *BaseCollector) SetMetrics(metrics map[string]*prometheus.Desc) *BaseCollector {
 	baseCollector.metrics = metrics
 	return baseCollector
+}
+
+// GetMetrics returns the metrics map.
+func (baseCollector *BaseCollector) GetMetrics() map[string]*prometheus.Desc {
+	return baseCollector.metrics
+}
+
+// GetMetricsDataCache returns the metricsDataCache.
+func (baseCollector *BaseCollector) GetMetricsDataCache() *metricsCache.MetricsDataCache {
+	return baseCollector.metricsDataCache
+}
+
+// GetCollectorName returns the collectorName.
+func (baseCollector *BaseCollector) GetCollectorName() string {
+	return baseCollector.collectorName
 }
 
 // CollectorSet implements the prometheus.Collector interface.

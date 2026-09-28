@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	cmicore "github.com/huawei/csm/v2/provider/cmicore"
 	metricsCache "github.com/huawei/csm/v2/server/prometheus-exporter/metricscache"
 )
 
@@ -158,7 +158,7 @@ func buildMockBaseCollector() *BaseCollector {
 		"fake_label3": {"fake_data", parseStorageData},
 	}
 	var mockMetricsParseMap = map[string]parseRelation{
-		"fake_key1": {"", parseStorageReturnZero},
+		"fake_key1": {"fake_data", parseStorageData},
 	}
 	var mockMetrics = map[string]*prometheus.Desc{
 		"fake_key1": prometheus.NewDesc(
@@ -168,14 +168,14 @@ func buildMockBaseCollector() *BaseCollector {
 			mockMetricsLabelMap["fake_key1"],
 			nil),
 	}
-	mockCollectDetail := storageGRPC.CollectDetail{
-		Data: map[string]string{"fake_data": "test_data"},
+	mockCollectDetail := cmicore.CollectDetail{
+		Data: map[string]string{"fake_data": "0"},
 	}
-	mockCollectResponse := storageGRPC.CollectResponse{
+	mockCollectResponse := cmicore.CollectResponse{
 		BackendName: "fake_backend_name",
 		CollectType: "fake_collector_name",
 		MetricsType: "fake_type",
-		Details:     []*storageGRPC.CollectDetail{&mockCollectDetail},
+		Details:     []*cmicore.CollectDetail{&mockCollectDetail},
 	}
 	mockMetricsData := metricsCache.BaseMetricsData{
 		MetricsType:         "fake_collector_name",
@@ -205,7 +205,7 @@ func TestBaseCollector_Collect_ParseSuccess(t *testing.T) {
 	mockCollector := buildMockBaseCollector()
 	mockMetricChan := make(chan prometheus.Metric, 2)
 	mockLabelValueSlice := []string{
-		"fake_backend_name", "fake_collector_name", "test_data"}
+		"fake_backend_name", "fake_collector_name", "0"}
 	wantPrometheusMetric := prometheus.MustNewConstMetric(
 		mockCollector.metrics["fake_key1"],
 		prometheus.GaugeValue,
@@ -334,7 +334,7 @@ func TestBaseCollector_SetLabelParseMap(t *testing.T) {
 func TestBaseCollector_SetMetricsParseMap(t *testing.T) {
 	// arrange
 	metricsParseMap := map[string]parseRelation{
-		"fake_key": {"", parseStorageReturnZero},
+		"fake_key": {"fake_data", parseStorageData},
 	}
 	mockCollector := &BaseCollector{}
 
@@ -374,20 +374,5 @@ func TestBaseCollector_SetMetrics(t *testing.T) {
 	// assert
 	if !reflect.DeepEqual(mockCollector.metrics, metrics) {
 		t.Errorf("SetBackendName() got = %v, want %v", mockCollector.metrics, metrics)
-	}
-}
-
-func TestNewPerformanceBaseCollector(t *testing.T) {
-	// arrange
-	var mockMetricsIndicators []string
-
-	// action
-	_, err := NewPerformanceBaseCollector("fake_backend", "performance",
-		"fake_collector", mockMetricsIndicators, nil)
-
-	// assert
-	if err == nil {
-		t.Errorf("NewPerformanceBaseCollector() error = %v, wantErr %v", err, true)
-		return
 	}
 }

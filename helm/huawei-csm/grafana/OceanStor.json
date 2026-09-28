@@ -2093,7 +2093,7 @@
             },
             {
               "exemplar": true,
-              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"}) - sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"})",
+              "expr": "huawei_storage_storagepool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"}) - sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"})",
               "hide": false,
               "interval": "",
               "legendFormat": "Free",
@@ -2183,7 +2183,7 @@
             },
             {
               "exemplar": true,
-              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"})",
+              "expr": "huawei_storage_storagepool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_lun_capacity{endpoint=~\"$StorageName\"})",
               "hide": false,
               "instant": true,
               "interval": "",
@@ -2266,7 +2266,7 @@
             },
             {
               "exemplar": true,
-              "expr": "huawei_storage_storage_pool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\"})",
+              "expr": "huawei_storage_storagepool_total_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"} - on(endpoint) sum by(endpoint) (huawei_storage_filesystem_capacity{endpoint=~\"$StorageName\"})",
               "hide": false,
               "instant": true,
               "interval": "",
@@ -2401,7 +2401,7 @@
           "targets": [
             {
               "exemplar": true,
-              "expr": "huawei_storage_storage_pool_free_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
+              "expr": "huawei_storage_storagepool_free_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
               "hide": false,
               "interval": "",
               "legendFormat": "Free",
@@ -2409,7 +2409,7 @@
             },
             {
               "exemplar": true,
-              "expr": "huawei_storage_storage_pool_used_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
+              "expr": "huawei_storage_storagepool_used_capacity{endpoint=~\"$StorageName\", name=\"$Pool\"}",
               "hide": false,
               "interval": "",
               "legendFormat": "Used",
@@ -4390,7 +4390,7 @@
           "value": "dorado-iscsi-138"
         },
         "datasource": "${DataSource}",
-        "definition": "label_values(huawei_storage_storage_pool_used_capacity{endpoint=~\".*\"},endpoint)",
+        "definition": "label_values(huawei_storage_storagepool_used_capacity{endpoint=~\".*\"},endpoint)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -4400,7 +4400,7 @@
         "name": "StorageName",
         "options": [],
         "query": {
-          "query": "label_values(huawei_storage_storage_pool_used_capacity{endpoint=~\".*\"},endpoint)",
+          "query": "label_values(huawei_storage_storagepool_used_capacity{endpoint=~\".*\"},endpoint)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,

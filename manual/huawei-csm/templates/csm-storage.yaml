@@ -26,27 +26,12 @@ rules:
   - apiGroups: [ "xuanwu.huawei.io" ]
     resources: [ "resourcetopologies", "resourcetopologies/status" ]
     verbs: [ "create", "get", "list", "watch", "update", "delete" ]
-  - apiGroups: [ "*" ]
-    resources: [ "*" ]
-    verbs: [ "get", "list", "watch" ]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: cmi-controller-role
-  labels:
-    app: csm-storage-service
-rules:
   - apiGroups: [ "xuanwu.huawei.io" ]
     resources: [ "storagebackendclaims" ]
     verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "secrets" ]
-    verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "configmaps" ]
-    verbs: [ "create", "get", "update" ]
+  - apiGroups: [ "*" ]
+    resources: [ "*" ]
+    verbs: [ "get", "list", "watch" ]
 
 ---
 kind: ClusterRoleBinding
@@ -62,22 +47,6 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: topo-service-role
-  apiGroup: rbac.authorization.k8s.io
-
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cmi-controller-binding
-  labels:
-    app: csm-storage-service
-subjects:
-  - kind: ServiceAccount
-    name: csm-storage-sa
-    namespace: huawei-csm
-roleRef:
-  kind: ClusterRole
-  name: cmi-controller-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -135,11 +104,10 @@ spec:
       containers:
         - name: liveness-probe
           args:
-            - --cmi-address=/cmi/cmi.sock
             - --ip-address=[$(POD_IP)]
             - --healthz-port=9808
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
-            - --log-file=liveness-prob
+            - --log-file=liveness-probe
             - --logging-module=file
             - --log-level=info
             - --log-file-size=20M
@@ -157,8 +125,6 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
           resources:
@@ -168,56 +134,7 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
-        - name: cmi-controller
-          image: csm-cmi:{{version}}
-          env:
-            - name: ENDPOINT
-              value: /cmi/cmi.sock
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-          imagePullPolicy: IfNotPresent
-          args:
-            - --cmi-address=$(ENDPOINT)
-            - --cmi-name=cmi.huawei.com
-            - --page-size=100
-            - --backend-namespace=huawei-csi
-            - --kube-api-qps=5
-            - --kube-api-burst=10
-            - --log-file-dir=/var/log/huawei-csm/csm-storage-service
-            - --log-file=cmi-service
-            - --logging-module=file
-            - --log-level=info
-            - --log-file-size=20M
-            - --max-backups=9
-          livenessProbe:
-            failureThreshold: 5
-            httpGet:
-              path: /healthz
-              port: healthz
-            initialDelaySeconds: 10
-            periodSeconds: 60
-            timeoutSeconds: 3
-          ports:
-            - containerPort: 9808
-              name: healthz
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
-            - mountPath: /var/log/
-              name: log
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
-              cpu: 300m
-              memory: 512Mi
         - args:
-            - --cmi-address=$(ENDPOINT)
             - --rt-retry-base-delay=5s
             - --pv-retry-base-delay=5s
             - --pod-retry-base-delay=5s
@@ -230,9 +147,9 @@ spec:
             - --kube-api-qps=5
             - --kube-api-burst=10
             - --enable-leader-election=false
-            - --leader-lease-duration=8s
-            - --leader-renew-deadline=6s
-            - --leader-retry-period=2s
+            - --leader-lease-duration=15s
+            - --leader-renew-deadline=10s
+            - --leader-retry-period=5s
             - --log-file-dir=/var/log/huawei-csm/csm-storage-service
             - --log-file=topo-service
             - --logging-module=file
@@ -240,8 +157,6 @@ spec:
             - --log-file-size=20M
             - --max-backups=9
           env:
-            - name: ENDPOINT
-              value: /cmi/cmi.sock
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -266,15 +181,11 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
             - mountPath: /etc/localtime
               name: host-time
       volumes:
-        - emptyDir: { }
-          name: socket-dir
         - hostPath:
             path: /var/log/
             type: Directory

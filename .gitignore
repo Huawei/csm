@@ -8,3 +8,6 @@
 out
 gen
 go.sum
+
+# codegraph index cache
+.codegraph/

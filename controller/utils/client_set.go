@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 
 	apiV1 "k8s.io/api/core/v1"
@@ -28,24 +29,26 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	sbcClient "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned"
-
 	"github.com/huawei/csm/v2/config/client"
-	cmiGrpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	cmiConfig "github.com/huawei/csm/v2/config/cmi"
+	leaderElectionConfig "github.com/huawei/csm/v2/config/leaderelection"
+	controllerConfig "github.com/huawei/csm/v2/config/topology"
 	xuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	"github.com/huawei/csm/v2/utils/log"
 )
 
 // ClientsSet contains all clients needed by controller
 type ClientsSet struct {
-	Config           *rest.Config
-	CmiClient        *cmiGrpc.ClientSet
-	KubeClient       kubernetes.Interface
-	XuanwuClient     xuanwuClient.Interface
-	SbcClient        sbcClient.Interface
-	DynamicClient    dynamic.Interface
-	EventBroadcaster record.EventBroadcaster
-	EventRecorder    record.EventRecorder
-	CmiAddress       string
+	Config             *rest.Config
+	ElectionKubeClient kubernetes.Interface
+	Core               *cmicore.Core
+	KubeClient         kubernetes.Interface
+	XuanwuClient       xuanwuClient.Interface
+	SbcClient          sbcClient.Interface
+	DynamicClient      dynamic.Interface
+	EventBroadcaster   record.EventBroadcaster
+	EventRecorder      record.EventRecorder
 }
 
 const (
@@ -54,18 +57,19 @@ const (
 
 var (
 	initFuncList = []func(*ClientsSet) error{
+		initElectionKubeClient,
 		initKubeClient,
 		initXuanwuClient,
 		initSbcClient,
 		initDynamicClient,
 		initEventBroadcaster,
 		initEventRecorder,
-		initCmiClient,
+		initCore,
 	}
 )
 
 // NewClientsSet creates a new clients set with the given kube config
-func NewClientsSet(config string, cmiAddress string) (*ClientsSet, error) {
+func NewClientsSet(config string) (*ClientsSet, error) {
 	var kubeConfig *rest.Config
 	var err error
 	if config != "" {
@@ -82,16 +86,40 @@ func NewClientsSet(config string, cmiAddress string) (*ClientsSet, error) {
 
 	clientsSet := &ClientsSet{}
 	clientsSet.Config = kubeConfig
-	clientsSet.CmiAddress = cmiAddress
 
-	for _, initFunction := range initFuncList {
+	for i, initFunction := range initFuncList {
 		err := initFunction(clientsSet)
 		if err != nil {
+			// If Core was already created (initCore succeeded), cleanup before returning
+			if i > 0 && clientsSet.Core != nil {
+				clientsSet.Core.Stop()
+			}
 			return nil, err
 		}
 	}
 
 	return clientsSet, nil
+}
+
+func initElectionKubeClient(c *ClientsSet) error {
+	log.Infoln("initial election kubernetes client")
+	defer log.Infoln("initial election kubernetes client success")
+	if c.ElectionKubeClient != nil {
+		log.Warningln("ElectionKubeClient already exists")
+		return nil
+	}
+
+	electionConfig := rest.CopyConfig(c.Config)
+	leaderElectionConfig.ApplyLeaderElectionQPSBurst(electionConfig)
+
+	kubeClient, err := kubernetes.NewForConfig(electionConfig)
+	if err != nil {
+		log.Errorf("init election kubernetes client error: [%v]", err)
+		return err
+	}
+
+	c.ElectionKubeClient = kubeClient
+	return nil
 }
 
 func initKubeClient(c *ClientsSet) error {
@@ -193,21 +221,36 @@ func initEventRecorder(c *ClientsSet) error {
 	return nil
 }
 
-func initCmiClient(c *ClientsSet) error {
-	log.Infoln("initial cmi client")
-	if c.CmiClient != nil {
+func initCore(c *ClientsSet) error {
+	log.Infoln("initial cmicore")
+	if c.Core != nil {
 		return nil
 	}
 
-	cmiClientSet, err := cmiGrpc.GetClientSet(c.CmiAddress)
-	if err != nil {
-		return fmt.Errorf("error getting client set of cmi: [%v]", err)
+	coreConfig := &cmicore.CoreConfig{
+		KubeClient:           c.KubeClient,
+		SbcClient:            c.SbcClient,
+		BackendNamespace:     controllerConfig.GetBackendNamespace(),
+		QueryStoragePageSize: cmiConfig.GetQueryStoragePageSize(),
+		ClientMaxThreads:     cmiConfig.GetClientMaxThreads(),
 	}
-	cmiClientSet.Conn.Connect()
-	c.CmiClient = cmiClientSet
 
-	log.Infoln("initial cmi client success")
+	core := cmicore.NewCore(coreConfig)
+	if err := core.Start(context.Background()); err != nil {
+		return fmt.Errorf("start cmicore failed: [%w]", err)
+	}
+
+	c.Core = core
+	log.Infoln("initial cmicore success")
 	return nil
+}
+
+// DeleteClientsSet cleans up the ClientsSet resources
+func DeleteClientsSet(c *ClientsSet) {
+	if c == nil || c.Core == nil {
+		return
+	}
+	c.Core.Stop()
 }
 
 func initSbcClient(c *ClientsSet) error {

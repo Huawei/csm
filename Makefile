@@ -28,6 +28,5 @@ BUILD:
 	go mod tidy
 # usage: [env] go build [-o output] [flags] packages
 	${env} go build -o ${TMP_DIR_PATH}/csm-prometheus-collector ${flag} -buildmode=pie ./cmd/third-party-monitor-server/prometheus-collector
-	${env} go build -o ${TMP_DIR_PATH}/csm-cmi ${flag} -buildmode=pie ./cmd/container-monitor-interface/cmi
 	${env} go build -o ${TMP_DIR_PATH}/csm-topo-service ${flag} -buildmode=pie ./cmd/storage-monitor-server/topo-service
 	${env} go build -o ${TMP_DIR_PATH}/csm-liveness-probe ${flag} -buildmode=pie ./cmd/livenessprobe

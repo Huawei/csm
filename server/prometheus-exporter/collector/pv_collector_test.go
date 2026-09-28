@@ -19,6 +19,8 @@ package collector
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_parsePVStorageIDGetName(t *testing.T) {
@@ -75,4 +77,69 @@ func Test_parsePVCapacityUsageSan(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("parseStorageData() got = %v, want %v", got, want)
 	}
+}
+
+func TestPvTypePrometheusMetrics_Namespace(t *testing.T) {
+	// arrange & act & assert
+	metrics, ok := pvTypePrometheusMetrics["namespace"]
+	assert.True(t, ok, "namespace should be in pvTypePrometheusMetrics")
+	assert.Len(t, metrics, 23)
+}
+
+func TestParseNamespaceData_FusionStorageNas(t *testing.T) {
+	// arrange
+	data := map[string]string{
+		"sbcStorageType": "fusionstorage-nas",
+		"ID":             "35",
+		"30001":          "1024",
+	}
+	// act
+	result := parseNamespaceData("30001", "namespace_nfs_read_bandwidth", data)
+	// assert
+	assert.Equal(t, "1024", result)
+}
+
+func TestParseNamespaceData_SkipNonFusionStorage(t *testing.T) {
+	// arrange
+	data := map[string]string{
+		"sbcStorageType": "oceanstor-nas",
+		"ID":             "10",
+		"30001":          "1024",
+	}
+	// act
+	result := parseNamespaceData("30001", "namespace_nfs_read_bandwidth", data)
+	// assert
+	assert.Equal(t, skipReportValue, result)
+}
+
+func TestParseNamespaceData_EmptyData(t *testing.T) {
+	// arrange
+	data := map[string]string{}
+	// act
+	result := parseNamespaceData("30001", "namespace_nfs_read_bandwidth", data)
+	// assert
+	assert.Equal(t, "", result)
+}
+
+func TestParsePVStorageID_WithLowercaseId(t *testing.T) {
+	// arrange — defensive fallback for lowercase id
+	data := map[string]string{
+		"id": "35",
+	}
+	// act
+	result := parsePVStorageID("ID", "", data)
+	// assert
+	assert.Equal(t, "35", result)
+}
+
+func TestParsePVCapacityUsage_FusionStorageNas(t *testing.T) {
+	// arrange
+	data := map[string]string{
+		"sbcStorageType":  "fusionstorage-nas",
+		"SPACE_USED_RATE": "29",
+	}
+	// act
+	result := parsePVCapacityUsage("", "", data)
+	// assert
+	assert.Equal(t, "29", result)
 }

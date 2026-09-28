@@ -59,3 +59,24 @@ func CompressStr(str string) (string, error) {
 	}
 	return fmt.Sprintf("%x", buf.Bytes()), nil
 }
+
+// GetValue get value from map[string]any by key
+func GetValue[T any](m map[string]any, k string) (T, bool) {
+	v, exists := m[k]
+	if !exists {
+		return zeroValue[T](), false
+	}
+
+	val, ok := v.(T)
+	if !ok {
+		return zeroValue[T](), false
+	}
+
+	return val, true
+}
+
+// zeroValue returns zero value of the given type.
+func zeroValue[T any]() T {
+	var zero T
+	return zero
+}

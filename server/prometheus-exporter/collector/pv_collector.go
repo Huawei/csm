@@ -45,13 +45,27 @@ var pvObjectMetricsHelpMap = map[string]string{
 }
 
 var pvObjectMetricsParseMap = map[string]parseRelation{
-	"capacity":       {"CAPACITY", parseStorageSectorsToGB},
+	"capacity":       {"CAPACITY", parsePVCapacity},
 	"capacity_usage": {"", parsePVCapacityUsage},
 }
 
 var pvTypePrometheusMetrics = map[string][]string{
 	"lun":        {"lun_total_bandwidth", "lun_pv_lun_total_iops", "lun_avg_io_response_time"},
 	"filesystem": {"filesystem_ops", "filesystem_avg_read_ops_response_time", "filesystem_avg_write_ops_response_time"},
+	"namespace": {
+		"namespace_nfs_read_bandwidth", "namespace_nfs_write_bandwidth",
+		"namespace_nfs_total_bandwidth", "namespace_nfs_read_ops",
+		"namespace_nfs_write_ops", "namespace_nfs_total_ops",
+		"namespace_nfs_avg_latency", "namespace_nfs_max_latency",
+		"namespace_nfs_write_avg_latency", "namespace_nfs_write_max_latency",
+		"namespace_nfs_read_avg_latency", "namespace_nfs_read_max_latency",
+		"namespace_nfs_read_io_avg_size", "namespace_nfs_write_io_avg_size",
+		"namespace_dpc_read_bandwidth", "namespace_dpc_write_bandwidth",
+		"namespace_dpc_read_ops", "namespace_dpc_write_ops",
+		"namespace_dpc_avg_read_latency", "namespace_dpc_avg_write_latency",
+		"namespace_dpc_total_bandwidth", "namespace_dpc_total_ops",
+		"namespace_dpc_avg_total_latency",
+	},
 }
 
 var pvPrometheusMetricsLabelMap = map[string][]string{
@@ -61,6 +75,29 @@ var pvPrometheusMetricsLabelMap = map[string][]string{
 	"filesystem_ops":                         pvLabelSlice,
 	"filesystem_avg_read_ops_response_time":  pvLabelSlice,
 	"filesystem_avg_write_ops_response_time": pvLabelSlice,
+	"namespace_nfs_read_bandwidth":           pvLabelSlice,
+	"namespace_nfs_write_bandwidth":          pvLabelSlice,
+	"namespace_nfs_total_bandwidth":          pvLabelSlice,
+	"namespace_nfs_read_ops":                 pvLabelSlice,
+	"namespace_nfs_write_ops":                pvLabelSlice,
+	"namespace_nfs_total_ops":                pvLabelSlice,
+	"namespace_nfs_avg_latency":              pvLabelSlice,
+	"namespace_nfs_max_latency":              pvLabelSlice,
+	"namespace_nfs_write_avg_latency":        pvLabelSlice,
+	"namespace_nfs_write_max_latency":        pvLabelSlice,
+	"namespace_nfs_read_avg_latency":         pvLabelSlice,
+	"namespace_nfs_read_max_latency":         pvLabelSlice,
+	"namespace_nfs_read_io_avg_size":         pvLabelSlice,
+	"namespace_nfs_write_io_avg_size":        pvLabelSlice,
+	"namespace_dpc_read_bandwidth":           pvLabelSlice,
+	"namespace_dpc_write_bandwidth":          pvLabelSlice,
+	"namespace_dpc_read_ops":                 pvLabelSlice,
+	"namespace_dpc_write_ops":                pvLabelSlice,
+	"namespace_dpc_avg_read_latency":         pvLabelSlice,
+	"namespace_dpc_avg_write_latency":        pvLabelSlice,
+	"namespace_dpc_total_bandwidth":          pvLabelSlice,
+	"namespace_dpc_total_ops":                pvLabelSlice,
+	"namespace_dpc_avg_total_latency":        pvLabelSlice,
 }
 
 var pvPrometheusMetricsHelpMap = map[string]string{
@@ -70,6 +107,29 @@ var pvPrometheusMetricsHelpMap = map[string]string{
 	"filesystem_ops":                         "OPS",
 	"filesystem_avg_read_ops_response_time":  "Avg Read OPS Response Time(us)",
 	"filesystem_avg_write_ops_response_time": "Avg Write OPS Response Time(us)",
+	"namespace_nfs_read_bandwidth":           "Namespace NFS Read Bandwidth(KB/s)",
+	"namespace_nfs_write_bandwidth":          "Namespace NFS Write Bandwidth(KB/s)",
+	"namespace_nfs_total_bandwidth":          "Namespace NFS Total Bandwidth(KB/s)",
+	"namespace_nfs_read_ops":                 "Namespace NFS Read OPS",
+	"namespace_nfs_write_ops":                "Namespace NFS Write OPS",
+	"namespace_nfs_total_ops":                "Namespace NFS Total OPS",
+	"namespace_nfs_avg_latency":              "Namespace NFS Avg Latency(us)",
+	"namespace_nfs_max_latency":              "Namespace NFS Max Latency(us)",
+	"namespace_nfs_write_avg_latency":        "Namespace NFS Write Avg Latency(us)",
+	"namespace_nfs_write_max_latency":        "Namespace NFS Write Max Latency(us)",
+	"namespace_nfs_read_avg_latency":         "Namespace NFS Read Avg Latency(us)",
+	"namespace_nfs_read_max_latency":         "Namespace NFS Read Max Latency(us)",
+	"namespace_nfs_read_io_avg_size":         "Namespace NFS Read IO Avg Size(KB)",
+	"namespace_nfs_write_io_avg_size":        "Namespace NFS Write IO Avg Size(KB)",
+	"namespace_dpc_read_bandwidth":           "Namespace DPC Read Bandwidth(MB/s)",
+	"namespace_dpc_write_bandwidth":          "Namespace DPC Write Bandwidth(MB/s)",
+	"namespace_dpc_read_ops":                 "Namespace DPC Read OPS",
+	"namespace_dpc_write_ops":                "Namespace DPC Write OPS",
+	"namespace_dpc_avg_read_latency":         "Namespace DPC Avg Read Latency(ms)",
+	"namespace_dpc_avg_write_latency":        "Namespace DPC Avg Write Latency(ms)",
+	"namespace_dpc_total_bandwidth":          "Namespace DPC Total Bandwidth(MB/s)",
+	"namespace_dpc_total_ops":                "Namespace DPC Total OPS",
+	"namespace_dpc_avg_total_latency":        "Namespace DPC Avg Total Latency(ms)",
 }
 
 var pvPrometheusMetricsParseMap = map[string]parseRelation{
@@ -79,6 +139,29 @@ var pvPrometheusMetricsParseMap = map[string]parseRelation{
 	"filesystem_ops":                         {"182", parsePVFSData},
 	"filesystem_avg_read_ops_response_time":  {"524", parsePVFSData},
 	"filesystem_avg_write_ops_response_time": {"525", parsePVFSData},
+	"namespace_nfs_read_bandwidth":           {"30001", parseNamespaceData},
+	"namespace_nfs_write_bandwidth":          {"30002", parseNamespaceData},
+	"namespace_nfs_total_bandwidth":          {"30003", parseNamespaceData},
+	"namespace_nfs_read_ops":                 {"30004", parseNamespaceData},
+	"namespace_nfs_write_ops":                {"30005", parseNamespaceData},
+	"namespace_nfs_total_ops":                {"30006", parseNamespaceData},
+	"namespace_nfs_avg_latency":              {"30011", parseNamespaceData},
+	"namespace_nfs_max_latency":              {"30012", parseNamespaceData},
+	"namespace_nfs_write_avg_latency":        {"30013", parseNamespaceData},
+	"namespace_nfs_write_max_latency":        {"30014", parseNamespaceData},
+	"namespace_nfs_read_avg_latency":         {"30015", parseNamespaceData},
+	"namespace_nfs_read_max_latency":         {"30016", parseNamespaceData},
+	"namespace_nfs_read_io_avg_size":         {"30076", parseNamespaceData},
+	"namespace_nfs_write_io_avg_size":        {"30077", parseNamespaceData},
+	"namespace_dpc_read_bandwidth":           {"30043", parseNamespaceData},
+	"namespace_dpc_write_bandwidth":          {"30044", parseNamespaceData},
+	"namespace_dpc_read_ops":                 {"30045", parseNamespaceData},
+	"namespace_dpc_write_ops":                {"30046", parseNamespaceData},
+	"namespace_dpc_avg_read_latency":         {"30048", parseNamespaceData},
+	"namespace_dpc_avg_write_latency":        {"30049", parseNamespaceData},
+	"namespace_dpc_total_bandwidth":          {"30051", parseNamespaceData},
+	"namespace_dpc_total_ops":                {"30052", parseNamespaceData},
+	"namespace_dpc_avg_total_latency":        {"31005", parseNamespaceData},
 }
 
 var pvLabelParseMap = map[string]parseRelation{
@@ -133,6 +216,23 @@ func parsePVLunData(inDataKey, metricsName string, inData map[string]string) str
 	return inData[inDataKey]
 }
 
+func parseNamespaceData(inDataKey, metricsName string, inData map[string]string) string {
+	if len(inData) == 0 {
+		return ""
+	}
+
+	pvType, ok := inData[storageTypeKey]
+	if !ok {
+		return ""
+	}
+
+	if pvType != storageTypeFusionNas {
+		return skipReportValue
+	}
+
+	return inData[inDataKey]
+}
+
 func parsePVStorageID(inDataKey, metricsName string, inData map[string]string) string {
 	if len(inData) == 0 {
 		return ""
@@ -144,6 +244,11 @@ func parsePVStorageID(inDataKey, metricsName string, inData map[string]string) s
 	_, ok = inData["ObjectName"]
 	if ok {
 		return inData["ObjectId"]
+	}
+	// Defensive fallback for lowercase id (DistributedClient normalizes to uppercase,
+	// but this handles any edge case where normalization may not apply)
+	if id, ok := inData["id"]; ok {
+		return id
 	}
 	return ""
 }
@@ -162,6 +267,9 @@ func parsePVCapacityUsage(inDataKey, metricsName string, inData map[string]strin
 	}
 	if pvType == storageTypeNas {
 		pvCapacityUsage = parseFilesystemCapacityUsage(inDataKey, metricsName, inData)
+	}
+	if pvType == storageTypeFusionNas {
+		pvCapacityUsage = inData["SPACE_USED_RATE"]
 	}
 	return pvCapacityUsage
 }

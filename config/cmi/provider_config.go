@@ -22,12 +22,9 @@ import (
 )
 
 const (
-	defaultQueryPageSize      = 100
-	defaultClientMaxThreads   = 20
-	defaultProviderName       = "cmi.huawei.com"
-	defaultProviderOptionName = "providerOptionName"
-	defaultCmiAddress         = "/cmi/cmi.sock"
-	defaultNamespace          = "huawei-csi"
+	defaultQueryStoragePageSize = 100
+	defaultClientMaxThreads     = 20
+	defaultProviderOptionName   = "providerOptionName"
 )
 
 // Option contains provider option args
@@ -36,9 +33,6 @@ var Option = NewProviderOption()
 type providerOption struct {
 	queryStoragePageSize int
 	clientMaxThreads     int
-	providerName         string
-	cmiAddress           string
-	backendNamespace     string
 }
 
 // GetName return option name
@@ -48,10 +42,7 @@ func (p *providerOption) GetName() string {
 
 // AddFlags add flags
 func (p *providerOption) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&p.providerName, "cmi-name", defaultProviderName, "Name of provider")
-	fs.StringVar(&p.cmiAddress, "cmi-address", defaultCmiAddress, "Path to cmi socket")
-	fs.IntVar(&p.queryStoragePageSize, "page-size", defaultQueryPageSize, "Max size of query storage")
-	fs.StringVar(&p.backendNamespace, "backend-namespace", defaultNamespace, "Namespace of backend")
+	fs.IntVar(&p.queryStoragePageSize, "page-size", defaultQueryStoragePageSize, "Max size of query storage")
 	fs.IntVar(&p.clientMaxThreads, "client-max-threads", defaultClientMaxThreads, "Max client threads")
 }
 
@@ -63,25 +54,9 @@ func (p *providerOption) ValidateConfig() error {
 // NewProviderOption init an instance of ProviderOption
 func NewProviderOption() *providerOption {
 	return &providerOption{
-		queryStoragePageSize: defaultQueryPageSize,
-		providerName:         defaultProviderName,
-		cmiAddress:           defaultCmiAddress,
+		queryStoragePageSize: defaultQueryStoragePageSize,
+		clientMaxThreads:     defaultClientMaxThreads,
 	}
-}
-
-// GetProviderName get provider name
-func GetProviderName() string {
-	return Option.providerName
-}
-
-// GetCmiAddress get cmi address
-func GetCmiAddress() string {
-	return Option.cmiAddress
-}
-
-// GetNamespace get namespace
-func GetNamespace() string {
-	return Option.backendNamespace
 }
 
 // GetQueryStoragePageSize get query storage page size

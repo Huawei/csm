@@ -103,8 +103,8 @@ func (runner *leaderElectionRunner) setResLock(ctx context.Context, clientSet *u
 		resourcelock.LeasesResourceLock,
 		utils.GetNameSpaceFromEnv(runner.params.namespaceEnv, runner.params.defaultNamespace),
 		runner.params.lockName,
-		clientSet.KubeClient.CoreV1(),
-		clientSet.KubeClient.CoordinationV1(),
+		clientSet.ElectionKubeClient.CoreV1(),
+		clientSet.ElectionKubeClient.CoordinationV1(),
 		runner.resLockConfig)
 	if err != nil {
 		errMsg := fmt.Sprintf("error creating resource lock: [%v]", err)

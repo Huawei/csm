@@ -19,13 +19,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned/fake"
-	sbcInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions"
 	"github.com/agiledragon/gomonkey/v2"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
+	"github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/clientset/versioned/fake"
+	sbcInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions"
 	controllerConfig "github.com/huawei/csm/v2/config/topology"
 )
 

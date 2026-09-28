@@ -19,25 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
-	coreV1 "k8s.io/api/core/v1"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
 
 	"github.com/huawei/csm/v2/storage/constant"
 	"github.com/huawei/csm/v2/utils/log"
-	"github.com/huawei/csm/v2/utils/resource"
 )
 
 const (
-	authenticationModeKey = "authenticationMode"
-	passwordKey           = "password"
-	authModeScopeLocal    = "0"
+	authModeScopeLocal = "0"
 )
 
 // backendLoginParams for login backend
@@ -69,7 +57,7 @@ func (c *CentralizedClient) Login(ctx context.Context) error {
 	}
 
 	resp, err := c.loginCall(ctx, reqData)
-	reqData[passwordKey] = ""
+	reqData["password"] = ""
 	if err != nil {
 		log.AddContext(ctx).Errorf("storage client login error: %v", err)
 		return err
@@ -179,128 +167,26 @@ func (c *CentralizedClient) loginCall(ctx context.Context, reqData map[string]in
 	return nil, errors.New("storage client all url connect error")
 }
 
-// getPasswordFromSecret is used to get password and authMode from secret
+// getBackendLoginParamsFromSecret is used to get password and authMode from secret
 func (c *CentralizedClient) getBackendLoginParamsFromSecret(ctx context.Context) (*backendLoginParams, error) {
-	secret, err := resource.Instance().GetSecret(c.SecretName, c.SecretNamespace)
-	if err != nil && !apiErrors.IsNotFound(err) {
-		return nil, fmt.Errorf("storage client get secret with name %s and namespace %s failed, error: %w",
-			c.SecretName, c.SecretNamespace, err)
+	secret, err := c.Client.GetSecretWithFallback(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get login secret failed: %w", err)
 	}
 
-	// when the sbc change the password by using oceanctl, the secret of sbc will be changed.
-	// in this case, need to get the latest secret from sbc.
-	if apiErrors.IsNotFound(err) {
-		log.AddContext(ctx).Infof("secret [%s/%s] not found, try to get new one from sbc dynamically",
-			c.SecretNamespace, c.SecretName)
-		secret, err = c.getSecretFromSbcDynamically(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("get secret from sbc dynamiclly failed, error is [%w]", err)
-		}
-		log.AddContext(ctx).Infof("get secret [%s/%s] from sbc dynamically", secret.Namespace, secret.Name)
-	}
-
-	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("secret is nil or the data not exist in secret, namespace: %s, secret name: %s",
-			c.SecretName, c.SecretNamespace)
-	}
-
-	password, exist := secret.Data[passwordKey]
+	password, exist := secret.Data["password"]
 	if !exist {
 		return nil, fmt.Errorf("failed to query the password, namespace: %s, secret name: %s",
 			c.SecretName, c.SecretNamespace)
 	}
 
 	scope := authModeScopeLocal
-	authMode, exist := secret.Data[authenticationModeKey]
+	authMode, exist := secret.Data["authenticationMode"]
 	if exist {
 		scope = string(authMode)
 	}
 
 	return &backendLoginParams{password: password, scope: scope}, nil
-}
-
-func (c *CentralizedClient) getSecretFromSbcDynamically(ctx context.Context) (*coreV1.Secret, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("getting cluster config error, error is [%v]", err)
-	}
-	dynamicClient, err := dynamic.NewForConfig(config)
-
-	gvr := schema.GroupVersionResource{
-		Group:    "xuanwu.huawei.io",
-		Version:  "v1",
-		Resource: "storagebackendclaims",
-	}
-	unstructuredResource, err := dynamicClient.Resource(gvr).Namespace(c.StorageBackendNamespace).
-		Get(context.TODO(), c.StorageBackendName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("get unstructuredResource of sbc [%s/%s] failed, "+
-			"error is [%v]", c.StorageBackendNamespace, c.StorageBackendName, err)
-	}
-
-	secretMeta, found, err := unstructured.NestedString(
-		unstructuredResource.UnstructuredContent(), "spec", "secretMeta")
-	if !found || err != nil {
-		return nil, fmt.Errorf("get secret meta from sbc [%s/%s] failed, "+
-			"error is [%v]", c.StorageBackendNamespace, c.StorageBackendName, err)
-	}
-
-	// secretMeta format is <namespace>/<name>
-	secretNameSpace := strings.Split(secretMeta, "/")[0]
-	secretName := strings.Split(secretMeta, "/")[1]
-	return resource.Instance().GetSecret(secretName, secretNameSpace)
-}
-
-func (c *CentralizedClient) getCertParametersFromSbcDynamically(ctx context.Context) (bool, string, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return false, "", fmt.Errorf("getting cluster config error, error is [%v]", err)
-	}
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return false, "", fmt.Errorf("getting dynamicClient error, error is [%v]", err)
-	}
-
-	gvr := schema.GroupVersionResource{
-		Group:    "xuanwu.huawei.io",
-		Version:  "v1",
-		Resource: "storagebackendclaims",
-	}
-	unstructuredResource, err := dynamicClient.Resource(gvr).Namespace(c.StorageBackendNamespace).
-		Get(context.TODO(), c.StorageBackendName, metav1.GetOptions{})
-	if err != nil {
-		return false, "", fmt.Errorf("get unstructuredResource of sbc [%s/%s] failed, "+
-			"error is [%v]", c.StorageBackendNamespace, c.StorageBackendName, err)
-	}
-
-	useCert, found, err := unstructured.NestedBool(
-		unstructuredResource.UnstructuredContent(), "spec", "useCert")
-	if err != nil {
-		return false, "", fmt.Errorf("get isUseCert parameter from sbc [%s/%s] failed, "+
-			"error is [%v]", c.StorageBackendNamespace, c.StorageBackendName, err)
-	}
-	if !found {
-		log.AddContext(ctx).Infof("useCert is not found, skip the cert")
-		return false, "", nil
-	}
-
-	if !useCert {
-		log.AddContext(ctx).Infof("useCert is false, skip the cert")
-		return false, "", nil
-	}
-
-	certSecret, found, err := unstructured.NestedString(
-		unstructuredResource.UnstructuredContent(), "spec", "certSecret")
-	if err != nil {
-		return false, "", fmt.Errorf("get certSecret parameter from sbc [%s/%s] failed, "+
-			"error is [%v]", c.StorageBackendNamespace, c.StorageBackendName, err)
-	}
-	if !found {
-		return false, "", fmt.Errorf("get certSecret parameter from sbc [%s/%s] failed, "+
-			"certSecret parameter is not found", c.StorageBackendNamespace, c.StorageBackendName)
-	}
-
-	return true, certSecret, nil
 }
 
 func (c *CentralizedClient) checkLoginAccountState(ctx context.Context, respData map[string]interface{}) error {

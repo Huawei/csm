@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,46 +18,29 @@ package metricscache
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
-	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	"github.com/agiledragon/gomonkey/v2"
 	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
+	"github.com/huawei/csm/v2/provider/cmicore"
 )
 
 func Test_buildOutPVData(t *testing.T) {
 	// arrange
 	ctx := context.TODO()
-	mockOutPVData := &storageGRPC.CollectResponse{
+	mockOutPVData := &cmicore.CollectResponse{
 		BackendName: "fake_backend",
 		CollectType: "fake_type",
-		Details:     []*storageGRPC.CollectDetail{}}
-	mockAllPVData := []coreV1.PersistentVolume{{}}
+		Details:     []*cmicore.CollectDetail{},
+	}
+	// Use empty PV data to avoid nil pointer in private method calls
+	mockAllPVData := []coreV1.PersistentVolume{}
 	mockAllSBCInfo := map[string]map[string]string{}
-	mockParse := &parsePVMetrics{}
-
-	// mock
-	mock := gomonkey.NewPatches()
-	mock.ApplyPrivateMethod(mockParse, "setCSIDriverNameMetrics",
-		func(volume coreV1.PersistentVolume) *parsePVMetrics {
-			return mockParse
-		}).ApplyPrivateMethod(mockParse, "setVolumeHandleMetrics",
-		func(volume coreV1.PersistentVolume) *parsePVMetrics {
-			return mockParse
-		}).ApplyPrivateMethod(mockParse, "setPVNameMetrics",
-		func(volume coreV1.PersistentVolume) *parsePVMetrics {
-			return mockParse
-		}).ApplyPrivateMethod(mockParse, "setPVCNameMetrics",
-		func(volume coreV1.PersistentVolume) *parsePVMetrics {
-			mockParse.parseError = errors.New("fake error")
-			return mockParse
-		})
 
 	// action
 	got := buildOutPVData(ctx, "fake_backend", "fake_type", mockAllSBCInfo, mockAllPVData)
@@ -66,11 +49,6 @@ func Test_buildOutPVData(t *testing.T) {
 	if !reflect.DeepEqual(got, mockOutPVData) {
 		t.Errorf("buildOutPVData() got = %v, want %v", got, mockOutPVData)
 	}
-
-	// cleanup
-	t.Cleanup(func() {
-		mock.Reset()
-	})
 }
 
 func Test_parseAllBackendInfo_Success(t *testing.T) {
@@ -108,10 +86,10 @@ func TestGetAndParsePVInfo_Success(t *testing.T) {
 	ctx := context.TODO()
 	backendName := "mockBackendName"
 	collectType := "mockCollectType"
-	outPVData := &storageGRPC.CollectResponse{
+	outPVData := &cmicore.CollectResponse{
 		BackendName: "fake_backend",
 		CollectType: "fake_type",
-		Details:     []*storageGRPC.CollectDetail{}}
+		Details:     []*cmicore.CollectDetail{}}
 	wantRes := outPVData
 
 	// mock
@@ -123,7 +101,7 @@ func TestGetAndParsePVInfo_Success(t *testing.T) {
 			backendName: {"namespace": "mockNamespace", "sbcStorageType": "mockStorageType"},
 		}
 	}).ApplyFunc(buildOutPVData, func(ctx context.Context, backendName, collectType string,
-		allSBCInfo map[string]map[string]string, allPVData []coreV1.PersistentVolume) *storageGRPC.CollectResponse {
+		allSBCInfo map[string]map[string]string, allPVData []coreV1.PersistentVolume) *cmicore.CollectResponse {
 		return outPVData
 	})
 

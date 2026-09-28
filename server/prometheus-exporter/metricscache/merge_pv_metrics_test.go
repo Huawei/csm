@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2024-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2024-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,8 +24,9 @@ import (
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
+	"github.com/stretchr/testify/assert"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 )
 
 func TestMergePVMetricsData_mergeKubePVAndStorageInfo_Success(t *testing.T) {
@@ -33,42 +34,47 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_Success(t *testing.T) {
 	ctx := context.TODO()
 	storageNameKey := "storageNameKey"
 	pvNameKey := "pvNameKey"
-	storageType := "storageType"
-	metricsDataCache := &MetricsDataCache{}
-	mergePVMetricsData := &MergePVMetricsData{}
+	volumeType := "lun" // Must match storageTypeMap["oceanstor-san"]
 
 	mockName := "name"
 	mockId := "001"
-	pvCacheData := []*storageGRPC.CollectDetail{{Data: map[string]string{
-		pvNameKey: mockName,
-		"field1":  "field1 context",
-		"field2":  "field2 context",
+	pvCacheData := []*cmicore.CollectDetail{{Data: map[string]string{
+		pvNameKey:        mockName,
+		"field1":         "field1 context",
+		"field2":         "field2 context",
+		"sbcStorageType": "oceanstor-san", // Must map to "lun" in storageTypeMap
 	}}}
 
-	wantRes := map[string]map[string]string{mockName + mockId: {
-		pvNameKey:      mockName,
-		"field1":       "field1 context",
-		"field2":       "field2 context",
-		storageNameKey: mockName,
-		"ID":           mockId,
-		"sameName":     mockName,
-	}}
+	// Provide storage response data that will be returned by GetMetricsData
+	storageResponse := &cmicore.CollectResponse{
+		Details: []*cmicore.CollectDetail{{Data: map[string]string{
+			storageNameKey: mockName,
+			"ID":           mockId,
+		}}},
+	}
+	storageMetricsData := &BaseMetricsData{
+		MetricsDataResponse: storageResponse,
+	}
+	metricsDataCache := &MetricsDataCache{
+		CacheDataMap: map[string]MetricsData{
+			volumeType: storageMetricsData,
+		},
+	}
+	mergePVMetricsData := &MergePVMetricsData{}
 
-	// mock
-	p := gomonkey.NewPatches()
-	p.ApplyMethod(reflect.TypeOf(metricsDataCache), "GetMetricsData",
-		func(_ *MetricsDataCache, metricsType string) *storageGRPC.CollectResponse {
-			return &storageGRPC.CollectResponse{
-				Details: []*storageGRPC.CollectDetail{{Data: map[string]string{
-					storageNameKey: mockName,
-					"ID":           mockId,
-				}}},
-			}
-		})
+	wantRes := map[string]map[string]string{mockName + mockId: {
+		pvNameKey:        mockName,
+		"field1":         "field1 context",
+		"field2":         "field2 context",
+		"sbcStorageType": "oceanstor-san",
+		storageNameKey:   mockName,
+		"ID":             mockId,
+		"sameName":       mockName,
+	}}
 
 	// action
 	gotRes, gotErr := mergePVMetricsData.mergeKubePVAndStorageInfo(ctx, storageNameKey, pvNameKey,
-		storageType, pvCacheData, metricsDataCache)
+		volumeType, pvCacheData, metricsDataCache)
 
 	// assert
 	if !reflect.DeepEqual(gotRes, wantRes) {
@@ -79,11 +85,6 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_Success(t *testing.T) {
 		t.Errorf("TestMergePVMetricsData_mergeKubePVAndStorageInfo_Success failed, "+
 			"gotErr [%v], wantErr [%v]", gotErr, nil)
 	}
-
-	// cleanup
-	t.Cleanup(func() {
-		p.Reset()
-	})
 }
 
 func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetPvDataFailed(t *testing.T) {
@@ -92,7 +93,7 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetPvDataFailed(t *testing
 	storageNameKey := "storageNameKey"
 	pvNameKey := "pvNameKey"
 	storageType := "storageType"
-	var pvCacheData []*storageGRPC.CollectDetail
+	var pvCacheData []*cmicore.CollectDetail
 	metricsDataCache := &MetricsDataCache{}
 	mergePVMetricsData := &MergePVMetricsData{}
 
@@ -119,7 +120,7 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetStorageDataFailed(t *te
 	storageNameKey := "storageNameKey"
 	pvNameKey := "pvNameKey"
 	storageType := "storageType"
-	pvCacheData := []*storageGRPC.CollectDetail{{Data: map[string]string{pvNameKey: "name"}}}
+	pvCacheData := []*cmicore.CollectDetail{{Data: map[string]string{pvNameKey: "name"}}}
 	metricsDataCache := &MetricsDataCache{}
 	mergePVMetricsData := &MergePVMetricsData{}
 
@@ -128,7 +129,7 @@ func TestMergePVMetricsData_mergeKubePVAndStorageInfo_GetStorageDataFailed(t *te
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyMethod(reflect.TypeOf(metricsDataCache), "GetMetricsData",
-		func(_ *MetricsDataCache, metricsType string) *storageGRPC.CollectResponse {
+		func(_ *MetricsDataCache, metricsType string) *cmicore.CollectResponse {
 			return nil
 		})
 
@@ -160,26 +161,18 @@ func TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess(t *testing.T) {
 		monitorType:     "performance",
 		mergeIndicators: []string{indicator1 + "," + indicator2},
 	}}
+	metricsDataCache := &MetricsDataCache{}
 
 	wantKey := "ObjectName"
 	wantList := []string{indicator1, indicator2}
 
 	// action
-	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams()
+	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams(metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotKey, wantKey) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess failed, "+
-			"gotKey [%v], wantKey [%v]", gotKey, wantKey)
-	}
-	if !reflect.DeepEqual(gotList, wantList) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess failed, "+
-			"gotList [%v], wantList [%v]", gotList, wantList)
-	}
-	if gotErr != nil {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_PerformanceSuccess failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, nil)
-	}
+	assert.Equal(t, wantKey, gotKey)
+	assert.Equal(t, wantList, gotList)
+	assert.NoError(t, gotErr)
 }
 
 func TestMergePVMetricsData_getPVMergeParams_ObjectSuccess(t *testing.T) {
@@ -188,26 +181,52 @@ func TestMergePVMetricsData_getPVMergeParams_ObjectSuccess(t *testing.T) {
 		monitorType:     "object",
 		mergeIndicators: nil,
 	}}
+	metricsDataCache := &MetricsDataCache{
+		CacheDataMap: map[string]MetricsData{
+			"pv":         &BaseMetricsData{},
+			"lun":        &BaseMetricsData{},
+			"filesystem": &BaseMetricsData{},
+		},
+	}
 
 	wantKey := "NAME"
+	// Object branch now derives from CacheDataMap keys, excluding "pv"
 	wantList := []string{"lun", "filesystem"}
 
 	// action
-	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams()
+	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams(metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotKey, wantKey) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_ObjectSuccess failed, "+
-			"gotKey [%v], wantKey [%v]", gotKey, wantKey)
+	assert.Equal(t, wantKey, gotKey)
+	assert.NoError(t, gotErr)
+	// Map iteration order is non-deterministic, so check containment instead of exact order
+	assert.ElementsMatch(t, wantList, gotList)
+}
+
+func TestMergePVMetricsData_getPVMergeParams_ObjectSuccessFusionStorage(t *testing.T) {
+	// arrange
+	mergePVMetricsData := &MergePVMetricsData{BaseMergeMetricsData: &BaseMergeMetricsData{
+		monitorType:     "object",
+		mergeIndicators: nil,
+	}}
+	// FusionStorage backend only has "namespace" in CacheDataMap
+	metricsDataCache := &MetricsDataCache{
+		CacheDataMap: map[string]MetricsData{
+			"pv":        &BaseMetricsData{},
+			"namespace": &BaseMetricsData{},
+		},
 	}
-	if !reflect.DeepEqual(gotList, wantList) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_ObjectSuccess failed, "+
-			"gotList [%v], wantList [%v]", gotList, wantList)
-	}
-	if gotErr != nil {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_ObjectSuccess failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, nil)
-	}
+
+	wantKey := "NAME"
+	wantList := []string{"namespace"}
+
+	// action
+	gotKey, gotList, gotErr := mergePVMetricsData.getPVMergeParams(metricsDataCache)
+
+	// assert
+	assert.Equal(t, wantKey, gotKey)
+	assert.Equal(t, wantList, gotList)
+	assert.NoError(t, gotErr)
 }
 
 func TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed(t *testing.T) {
@@ -218,28 +237,19 @@ func TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed(t *testing.T) 
 		metricsType:     "",
 		mergeIndicators: nil,
 	}}
-	emptyErr := fmt.Errorf("when get pv merge params, " +
+	metricsDataCache := &MetricsDataCache{}
+	wantErr := fmt.Errorf("when get pv merge params, " +
 		"the monitorType is performance but mergeIndicators is empty")
-	wantErr := emptyErr
 	var wantKey string
 	var wantIndicators []string
 
 	// action
-	gotKey, gotIndicators, gotErr := mergePVMetricsData.getPVMergeParams()
+	gotKey, gotIndicators, gotErr := mergePVMetricsData.getPVMergeParams(metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
-	}
-	if !reflect.DeepEqual(gotKey, wantKey) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed failed, "+
-			"gotKey [%v], wantKey [%v]", gotKey, wantKey)
-	}
-	if !reflect.DeepEqual(gotIndicators, wantIndicators) {
-		t.Errorf("TestMergePVMetricsData_getPVMergeParams_EmptyIndicatorFailed failed, "+
-			"gotIndicators [%v], wantIndicators [%v]", gotIndicators, wantIndicators)
-	}
+	assert.Equal(t, wantErr, gotErr)
+	assert.Equal(t, wantKey, gotKey)
+	assert.Equal(t, wantIndicators, gotIndicators)
 }
 
 func TestMergePVMetricsData_MergeData_Success(t *testing.T) {
@@ -254,16 +264,16 @@ func TestMergePVMetricsData_MergeData_Success(t *testing.T) {
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "performance", []string{"indicator1"}, nil
 		}).ApplyMethod(reflect.TypeOf(pvCacheData), "GetMetricsDataResponse",
-		func(_ *BaseMetricsData) *storageGRPC.CollectResponse {
-			return &storageGRPC.CollectResponse{
-				Details: []*storageGRPC.CollectDetail{{Data: map[string]string{}}},
+		func(_ *BaseMetricsData) *cmicore.CollectResponse {
+			return &cmicore.CollectResponse{
+				Details: []*cmicore.CollectDetail{{Data: map[string]string{}}},
 			}
 		}).ApplyPrivateMethod(mergePVMetricsData, "mergeKubePVAndStorageInfo",
 		func(ctx context.Context, storageNameKey, pvNameKey, storageType string,
-			pvCacheData []*storageGRPC.CollectDetail, metricsDataCache *MetricsDataCache) (
+			pvCacheData []*cmicore.CollectDetail, metricsDataCache *MetricsDataCache) (
 			map[string]map[string]string, error) {
 			return nil, nil
 		})
@@ -272,9 +282,7 @@ func TestMergePVMetricsData_MergeData_Success(t *testing.T) {
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if gotErr != nil {
-		t.Errorf("TestMergePVMetricsData_MergeData_Success failed, gotErr [%v], wantErr [%v]", gotErr, nil)
-	}
+	assert.NoError(t, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {
@@ -296,7 +304,7 @@ func TestMergePVMetricsData_MergeData_GetParamsFailed(t *testing.T) {
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "", nil, getParamsErr
 		})
 
@@ -304,10 +312,7 @@ func TestMergePVMetricsData_MergeData_GetParamsFailed(t *testing.T) {
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
-		t.Errorf("TestMergePVMetricsData_MergeData_GetParamsFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
-	}
+	assert.Equal(t, wantErr, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {
@@ -320,13 +325,12 @@ func TestMergePVMetricsData_MergeData_GetCacheFailed(t *testing.T) {
 	ctx := context.TODO()
 	metricsDataCache := &MetricsDataCache{CacheDataMap: map[string]MetricsData{}}
 	mergePVMetricsData := &MergePVMetricsData{}
-	getCacheErr := fmt.Errorf("can not get pv cache data when MergePVAndStorageData")
-	wantErr := getCacheErr
+	wantErr := fmt.Errorf("can not get pv cache data when MergePVAndStorageData")
 
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "performance", []string{"indicator1"}, nil
 		})
 
@@ -334,10 +338,7 @@ func TestMergePVMetricsData_MergeData_GetCacheFailed(t *testing.T) {
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
-		t.Errorf("TestMergePVMetricsData_MergeData_GetCacheFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
-	}
+	assert.Equal(t, wantErr, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {
@@ -353,16 +354,15 @@ func TestMergePVMetricsData_MergeData_GetMetricsFailed(t *testing.T) {
 		"pv": pvCacheData,
 	}}
 	mergePVMetricsData := &MergePVMetricsData{}
-	getMetricsErr := fmt.Errorf("can not get MetricsDataResponse data when MergePVAndStorageData")
-	wantErr := getMetricsErr
+	wantErr := fmt.Errorf("can not get MetricsDataResponse data when MergePVAndStorageData")
 
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "performance", []string{"indicator1"}, nil
 		}).ApplyMethod(reflect.TypeOf(pvCacheData), "GetMetricsDataResponse",
-		func(_ *BaseMetricsData) *storageGRPC.CollectResponse {
+		func(_ *BaseMetricsData) *cmicore.CollectResponse {
 			return nil
 		})
 
@@ -370,10 +370,7 @@ func TestMergePVMetricsData_MergeData_GetMetricsFailed(t *testing.T) {
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
-		t.Errorf("TestMergePVMetricsData_MergeData_GetMetricsFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
-	}
+	assert.Equal(t, wantErr, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {
@@ -389,27 +386,23 @@ func TestMergePVMetricsData_MergeData_GetMetricsDetailsFailed(t *testing.T) {
 		"pv": pvCacheData,
 	}}
 	mergePVMetricsData := &MergePVMetricsData{}
-	getMetricsDetailsErr := fmt.Errorf("can not get MetricsDataResponse.Details when MergePVAndStorageData")
-	wantErr := getMetricsDetailsErr
+	wantErr := fmt.Errorf("can not get MetricsDataResponse.Details when MergePVAndStorageData")
 
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "performance", []string{"indicator1"}, nil
 		}).ApplyMethod(reflect.TypeOf(pvCacheData), "GetMetricsDataResponse",
-		func(_ *BaseMetricsData) *storageGRPC.CollectResponse {
-			return &storageGRPC.CollectResponse{Details: nil}
+		func(_ *BaseMetricsData) *cmicore.CollectResponse {
+			return &cmicore.CollectResponse{Details: nil}
 		})
 
 	// action
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
 	// assert
-	if !reflect.DeepEqual(gotErr, wantErr) {
-		t.Errorf("TestMergePVMetricsData_MergeData_GetMetricsDetailsFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, wantErr)
-	}
+	assert.Equal(t, wantErr, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {
@@ -430,16 +423,16 @@ func TestMergePVMetricsData_MergeData_MergeFailed(t *testing.T) {
 	// mock
 	p := gomonkey.NewPatches()
 	p.ApplyPrivateMethod(mergePVMetricsData, "getPVMergeParams",
-		func(ctx context.Context) (string, []string, error) {
+		func(_ *MergePVMetricsData, cache *MetricsDataCache) (string, []string, error) {
 			return "performance", []string{"indicator1"}, nil
 		}).ApplyMethod(reflect.TypeOf(pvCacheData), "GetMetricsDataResponse",
-		func(_ *BaseMetricsData) *storageGRPC.CollectResponse {
-			return &storageGRPC.CollectResponse{
-				Details: []*storageGRPC.CollectDetail{{Data: map[string]string{}}},
+		func(_ *BaseMetricsData) *cmicore.CollectResponse {
+			return &cmicore.CollectResponse{
+				Details: []*cmicore.CollectDetail{{Data: map[string]string{}}},
 			}
 		}).ApplyPrivateMethod(mergePVMetricsData, "mergeKubePVAndStorageInfo",
 		func(ctx context.Context, storageNameKey, pvNameKey, storageType string,
-			pvCacheData []*storageGRPC.CollectDetail, metricsDataCache *MetricsDataCache) (
+			pvCacheData []*cmicore.CollectDetail, metricsDataCache *MetricsDataCache) (
 			map[string]map[string]string, error) {
 			return nil, mergeErr
 		})
@@ -447,11 +440,8 @@ func TestMergePVMetricsData_MergeData_MergeFailed(t *testing.T) {
 	// action
 	gotErr := mergePVMetricsData.MergeData(ctx, metricsDataCache)
 
-	// assert
-	if gotErr != nil {
-		t.Errorf("TestMergePVMetricsData_MergeData_MergeFailed failed, "+
-			"gotErr [%v], wantErr [%v]", gotErr, nil)
-	}
+	// assert - mergeKubePVAndStorageInfo failure is logged as warning, not returned as error
+	assert.NoError(t, gotErr)
 
 	// cleanup
 	t.Cleanup(func() {

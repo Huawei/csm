@@ -17,49 +17,58 @@
 package clientset
 
 import (
+	"context"
 	"errors"
-	"reflect"
 	"sync"
 	"testing"
 
 	"github.com/agiledragon/gomonkey/v2"
-	"google.golang.org/grpc"
 	"k8s.io/client-go/rest"
 
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	cmicore "github.com/huawei/csm/v2/provider/cmicore"
 )
 
 func TestInitExporterClientSet(t *testing.T) {
-	// arrange
-	want := &ClientsSet{}
+	// create mock core
+	mockCore := &cmicore.Core{}
 
-	// mock
+	// mock - mock the cmicore NewCore to avoid actual initialization
 	patches := gomonkey.
-		ApplyFunc(storageGRPC.GetClientSet, func(address string) (*ClientsSet, error) {
-			return nil, nil
-		}).ApplyFunc(initKubeClientAndSbcClient, func() { return })
+		ApplyFunc(initKubeClientAndSbcClient, func() { return }).
+		ApplyFunc(cmicore.NewCore, func(config *cmicore.CoreConfig) *cmicore.Core {
+			return mockCore
+		}).
+		ApplyMethodFunc(mockCore, "Start", func(ctx context.Context) error {
+			return nil
+		})
 	defer patches.Reset()
 
 	// action
-	got := InitExporterClientSet("fake_data")
+	got := InitExporterClientSet()
 
-	// assert
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("GetExporterClientSet() got = %v, want %v", got, want)
+	// assert - just verify it doesn't panic and returns non-nil
+	if got == nil {
+		t.Error("InitExporterClientSet() got = nil, want non-nil")
+	}
+	if got.Core != mockCore {
+		t.Errorf("InitExporterClientSet() got.Core = %v, want %v", got.Core, mockCore)
 	}
 }
 
 func TestDeleteExporterClientSet(t *testing.T) {
-	// array
+	// arrange
 	called := false
+
+	// create mock core
+	mockCore := &cmicore.Core{}
 
 	// mock
 	patches := gomonkey.
 		ApplyGlobalVar(&exporterClientSet, &ClientsSet{
-			StorageGRPCClientSet: &storageGRPC.ClientSet{Conn: &grpc.ClientConn{}}}).
-		ApplyMethodFunc(exporterClientSet.StorageGRPCClientSet.Conn, "Close", func() error {
+			Core: mockCore,
+		}).
+		ApplyMethodFunc(mockCore, "Stop", func() {
 			called = true
-			return nil
 		})
 	defer patches.Reset()
 
@@ -90,7 +99,7 @@ func TestDeleteExporterClientSet_NilClientSet(t *testing.T) {
 	DeleteExporterClientSet()
 }
 
-func TestDeleteExporterClientSet_NilGRPCClientSet(t *testing.T) {
+func TestDeleteExporterClientSet_NilCore(t *testing.T) {
 	orig := exporterClientSet
 	exporterClientSet = &ClientsSet{}
 	defer func() { exporterClientSet = orig }()
@@ -98,10 +107,10 @@ func TestDeleteExporterClientSet_NilGRPCClientSet(t *testing.T) {
 	DeleteExporterClientSet()
 }
 
-func TestDeleteExporterClientSet_NilConn(t *testing.T) {
+func TestDeleteExporterClientSet_NilGRPCClientSet(t *testing.T) {
 	orig := exporterClientSet
 	exporterClientSet = &ClientsSet{
-		StorageGRPCClientSet: &storageGRPC.ClientSet{},
+		Core: nil,
 	}
 	defer func() { exporterClientSet = orig }()
 
@@ -144,8 +153,41 @@ func TestInitExporterClientSet_AlreadyInitialized(t *testing.T) {
 	exporterClientSet = &ClientsSet{}
 	defer func() { exporterClientSet = origExporterClientSet }()
 
-	cs := InitExporterClientSet("/fake/sock")
+	cs := InitExporterClientSet()
 	if cs != exporterClientSet {
 		t.Error("should return existing clientSet")
+	}
+}
+
+func TestInitExporterClientSet_ConcurrentInit(t *testing.T) {
+	// This test verifies that concurrent initialization doesn't cause race conditions
+	origOnce := once
+	once = sync.Once{}
+	defer func() { once = origOnce }()
+
+	origExporterClientSet := exporterClientSet
+	defer func() { exporterClientSet = origExporterClientSet }()
+
+	// Reset the global for this test
+	exporterClientSet = nil
+
+	var wg sync.WaitGroup
+	results := make([]*ClientsSet, 10)
+
+	// act - concurrent initialization
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx] = InitExporterClientSet()
+		}(i)
+	}
+	wg.Wait()
+
+	// assert - all should get the same client set
+	for i := 1; i < 10; i++ {
+		if results[i] != results[0] {
+			t.Errorf("concurrent init returned different clientSet at index %d", i)
+		}
 	}
 }

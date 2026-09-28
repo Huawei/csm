@@ -50,8 +50,8 @@ func TestLoginThenSuccess(t *testing.T) {
 
 	secret := &coreV1.Secret{
 		Data: map[string][]byte{
-			passwordKey:           []byte{'1'},
-			authenticationModeKey: []byte("1"),
+			"password":           []byte{'1'},
+			"authenticationMode": []byte("1"),
 		},
 	}
 	var coreCli *resource.Client

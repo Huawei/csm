@@ -1,5 +1,5 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2023-2026. All rights reserved.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -22,9 +22,6 @@ import (
 	"strings"
 	"time"
 
-	sbcClientInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions/xuanwu/v1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -34,18 +31,19 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
+	sbcClientInformers "github.com/Huawei/eSDK_K8S_Plugin/v4/pkg/client/informers/externalversions/xuanwu/v1"
 	apiXuanwuV1 "github.com/huawei/csm/v2/client/apis/xuanwu/v1"
 	controllerConfig "github.com/huawei/csm/v2/config/topology"
 	"github.com/huawei/csm/v2/controller/utils/consts"
-	cmiGrpc "github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	xuanwuClient "github.com/huawei/csm/v2/pkg/client/clientset/versioned"
 	xuanwuClientInformers "github.com/huawei/csm/v2/pkg/client/informers/externalversions/xuanwu/v1"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	"github.com/huawei/csm/v2/utils/log"
 )
 
 // Controller defines the resourceTopology controller parameters
 type Controller struct {
-	cmiClient     *cmiGrpc.ClientSet
+	core          *cmicore.Core
 	kubeClient    kubernetes.Interface
 	xuanwuClient  xuanwuClient.Interface
 	eventRecorder record.EventRecorder
@@ -68,7 +66,7 @@ type Controller struct {
 
 // ControllerRequest is a request for new controller
 type ControllerRequest struct {
-	CmiClient        *cmiGrpc.ClientSet
+	Core             *cmicore.Core
 	KubeClient       kubernetes.Interface
 	XuanwuClient     xuanwuClient.Interface
 	TopologyInformer xuanwuClientInformers.ResourceTopologyInformer
@@ -97,7 +95,7 @@ func NewController(request ControllerRequest) *Controller {
 		xuanwuClient:     request.XuanwuClient,
 		eventRecorder:    request.EventRecorder,
 		reSyncPeriod:     request.ReSyncPeriod,
-		cmiClient:        request.CmiClient,
+		core:             request.Core,
 		topologyQueue:    workqueue.NewRateLimitingQueueWithConfig(rtRateLimiter, resourceTopologyQueueConfig),
 		topologyInformer: request.TopologyInformer,
 		volumeQueue:      workqueue.NewRateLimitingQueueWithConfig(pvRateLimiter, volumeQueueConfig),
@@ -366,11 +364,6 @@ func (ctrl *Controller) handle(ctx context.Context, obj interface{},
 	}
 
 	if err = function(ctx, key); err != nil {
-		if status.Code(err) == codes.InvalidArgument {
-			queue.Forget(obj)
-			log.AddContext(ctx).Warningf("invalidArgument, handle key [%s] failed, error is [%v]", key, err)
-			return nil
-		}
 		queue.AddRateLimited(key)
 		return fmt.Errorf("handle key [%s] failed: [%s], requeuing key [%s]", key, err.Error(), key)
 	}

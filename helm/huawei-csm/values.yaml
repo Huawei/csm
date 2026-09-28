@@ -16,9 +16,9 @@ global:
     maxBackups: 9
   # leaderElection configuration
   leaderElection:
-    leaseDuration: "8s"
-    renewDeadline: "6s"
-    retryPeriod: "2s"
+    leaseDuration: "15s"
+    renewDeadline: "10s"
+    retryPeriod: "5s"
   # csiDriverName: the csi driver name
   # Default value: "csi.huawei.com"
   csiDriverName: "csi.huawei.com"
@@ -163,7 +163,6 @@ cluster:
 images:
   prometheusCollector: csm-prometheus-collector:{{version}}
   topoService: csm-topo-service:{{version}}
-  containerMonitorInterface: csm-cmi:{{version}}
   livenessProbe: csm-liveness-probe:{{version}}
 
 # Specify the amount of CPU and memory resources that a container requires
@@ -184,13 +183,6 @@ containerResourcesSet:
       limits:
         cpu: 300m
         memory: 512Mi
-    cmiController:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 300m
-        memory: 512Mi
   storageService:
     livenessProbe:
       requests:
@@ -199,13 +191,6 @@ containerResourcesSet:
       limits:
         cpu: 100m
         memory: 128Mi
-    cmiController:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 300m
-        memory: 512Mi
     topoService:
       requests:
         cpu: 50m

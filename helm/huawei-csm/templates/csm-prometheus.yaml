@@ -32,6 +32,12 @@ rules:
   - apiGroups: [ "xuanwu.huawei.io" ]
     resources: [ "storagebackendclaims","storagebackendcontents" ]
     verbs: [ "get","list" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    verbs: [ "create", "get", "update" ]
 
 ---
 kind: ClusterRoleBinding
@@ -47,40 +53,6 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: prometheus-collector-role
-  apiGroup: rbac.authorization.k8s.io
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: cmi-collector-role
-  labels:
-    app: csm-prometheus-service
-rules:
-  - apiGroups: [ "xuanwu.huawei.io" ]
-    resources: [ "storagebackendclaims" ]
-    verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "secrets" ]
-    verbs: [ "get" ]
-  - apiGroups: [ "" ]
-    resources: [ "configmaps" ]
-    verbs: [ "create", "get", "update" ]
-
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: cmi-collector-binding
-  labels:
-    app: csm-prometheus-service
-subjects:
-  - kind: ServiceAccount
-    name: csm-prometheus-sa
-    namespace: {{ (.Values.global).namespace | default "huawei-csm" }}
-roleRef:
-  kind: ClusterRole
-  name: cmi-collector-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -124,7 +96,6 @@ spec:
       containers:
         - name: liveness-probe
           args:
-            - --cmi-address={{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
             - --ip-address=[$(POD_IP)]
             - --healthz-port={{ (.Values.global).healthPort | default 9808 }}
             - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
@@ -145,8 +116,6 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
           {{ if ((.Values.containerResourcesSet).prometheusService).livenessProbe }}
@@ -157,8 +126,6 @@ spec:
           image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
           }}{{ required "Must provide the .Values.images.prometheusCollector" .Values.images.prometheusCollector }}
           env:
-            - name: ENDPOINT
-              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
             - name: NAMESPACE
               valueFrom:
                 fieldRef:
@@ -170,7 +137,6 @@ spec:
                   fieldPath: status.podIP
           imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
           args:
-            - --cmi-address=$(ENDPOINT)
             - --ip-address=[$(POD_IP)]
             - --exporter-port=8887
             - --use-https={{(((.Values.features).prometheusCollector).prometheusCollectorSSL).enabled }}
@@ -183,8 +149,6 @@ spec:
             - --kube-api-burst={{ ((.Values.features).prometheusCollector).kubeAPIBurst | default 10 }}
             {{- include "log" .Values.global.logging | nindent 12 }}
           volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
             - mountPath: /var/log
               name: log
             - mountPath: /etc/localtime
@@ -209,56 +173,7 @@ spec:
           resources:
           {{- toYaml .Values.containerResourcesSet.prometheusService.prometheusCollector | nindent 12 }}
           {{ end }}
-        - name: cmi-controller
-          image: {{ required "Must provide the Values.global.imageRepo" .Values.global.imageRepo
-          }}{{ required "Must provide the .Values.images.containerMonitorInterface"
-           .Values.images.containerMonitorInterface }}
-          env:
-            - name: ENDPOINT
-              value: {{ ((.Values.features).cmi).socket | default "/cmi/cmi.sock" }}
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-          imagePullPolicy: {{ (.Values.global).pullPolicy | default "IfNotPresent" }}
-          args:
-            - --cmi-address=$(ENDPOINT)
-            - --cmi-name=cmi.huawei.com
-            - --page-size=100
-            - --backend-namespace={{ .Values.global.csiDriverNamespace }}
-            - --kube-api-qps={{ ((.Values.features).prometheusCollector).kubeAPIQps | default 5 }}
-            - --kube-api-burst={{ ((.Values.features).prometheusCollector).kubeAPIBurst | default 10 }}
-            - --log-file-dir=/var/log/huawei-csm/csm-prometheus-service
-            - --log-file=cmi-service
-            - --csm-namespace={{ (.Values.global).namespace | default "huawei-csm" }}
-            {{- include "log" .Values.global.logging | nindent 12 }}
-          livenessProbe:
-            failureThreshold: 5
-            httpGet:
-              path: /healthz
-              port: healthz
-            initialDelaySeconds: 10
-            periodSeconds: 60
-            timeoutSeconds: 3
-          ports:
-            - containerPort: {{ (.Values.global).healthPort | default 9808 }}
-              name: healthz
-              protocol: TCP
-          volumeMounts:
-            - mountPath: /cmi
-              name: socket-dir
-            - mountPath: /var/log/
-              name: log
-            - mountPath: /etc/localtime
-              name: host-time
-          {{ if ((.Values.containerResourcesSet).prometheusService).cmiController }}
-          resources:
-          {{- toYaml .Values.containerResourcesSet.prometheusService.cmiController | nindent 12 }}
-          {{ end }}
       volumes:
-        - emptyDir: { }
-          name: socket-dir
         - hostPath:
             path: /var/log/
             type: Directory

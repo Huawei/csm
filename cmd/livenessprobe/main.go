@@ -1,15 +1,15 @@
 /*
- Copyright (c) Huawei Technologies Co., Ltd. 2018-2025. All rights reserved.
+Copyright (c) Huawei Technologies Co., Ltd. 2018-2026. All rights reserved.
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-      http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+     http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 // Package main is the process entry
@@ -25,43 +25,35 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/huawei/csm/v2/config/consts"
-	"github.com/huawei/csm/v2/grpc/lib/go/cmi"
 	"github.com/huawei/csm/v2/utils/log"
 	"github.com/huawei/csm/v2/utils/version"
 )
 
 const (
-	containerName       = "liveness-probe"
-	namespaceEnv        = "NAMESPACE"
-	defaultNamespace    = "huawei-csm"
-	defaultIpAddress    = "0.0.0.0"
-	defaultHealthzPort  = "9808"
-	defaultProbeTimeout = 10 * time.Second
-	defaultCmiAddress   = "/cmi/cmi.sock"
-	defaultLogFile      = "liveness-probe"
-	versionCmName       = "huawei-csm-version"
+	containerName      = "liveness-probe"
+	namespaceEnv       = "NAMESPACE"
+	defaultNamespace   = "huawei-csm"
+	defaultIpAddress   = "0.0.0.0"
+	defaultHealthzPort = "9808"
+	defaultLogFile     = "liveness-probe"
+	versionCmName      = "huawei-csm-version"
 
 	healthz = "/healthz"
+	timeout = 10 * time.Second
 )
 
 // Command line flags
 var (
-	probeTimeout time.Duration
-	cmiAddress   string
-	ipAddress    string
-	healthzPort  string
-	logFile      string
-	namespace    string
+	ipAddress   string
+	healthzPort string
+	logFile     string
+	namespace   string
 
 	livenessprobe = &cobra.Command{
 		Use:  "livenessprobe",
 		Long: `liveness probe for CSM services`,
 	}
 )
-
-type healthProbe struct {
-	client *cmi.ClientSet
-}
 
 func main() {
 	parseFlags()
@@ -81,17 +73,8 @@ func main() {
 			return
 		}
 
-		clientSet, err := cmi.GetClientSet(cmiAddress)
-		if err != nil {
-			log.Errorf("get cmi client set failed: [%v]", err)
-			return
-		}
-		defer clientSet.Conn.Close()
-
 		mux := http.NewServeMux()
-
-		hp := healthProbe{client: clientSet}
-		mux.HandleFunc(healthz, hp.probe)
+		mux.HandleFunc(healthz, probe)
 
 		addr := fmt.Sprintf("%s:%s", ipAddress, healthzPort)
 		log.Infof("serveMux listening at [%s]", addr)
@@ -108,28 +91,18 @@ func main() {
 	}
 }
 
-func (hp *healthProbe) probe(w http.ResponseWriter, req *http.Request) {
-	ctx, cancel := context.WithTimeout(req.Context(), probeTimeout)
+// probe is a minimal health check that always returns success.
+// In the in-process architecture, the process itself is the health indicator.
+// Kubernetes handles process liveness natively via the container runtime.
+func probe(w http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), timeout)
 	defer cancel()
-	log.AddContext(ctx).Infoln("start to probe cmi service")
-
-	_, err := hp.client.IdentityClient.Probe(ctx, &cmi.ProbeRequest{})
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Errorf("probe cmi service failed: [%v]", err)
-		return
-	}
-
+	log.AddContext(ctx).Infoln("liveness probe check passed - process is alive")
 	w.WriteHeader(http.StatusOK)
-	log.AddContext(ctx).Infoln("probe cmi service succeeded")
 }
 
 func parseFlags() {
 	livenessprobe.Flags().AddGoFlagSet(flag.CommandLine)
-	livenessprobe.Flags().DurationVar(&probeTimeout, "probe-timeout", defaultProbeTimeout,
-		"Probe timeout in seconds.")
-	livenessprobe.Flags().StringVar(&cmiAddress, "cmi-address", defaultCmiAddress,
-		"Address of the CMI driver socket.")
 	livenessprobe.Flags().StringVar(&ipAddress, "ip-address", defaultIpAddress,
 		"The listening ip address in the container.")
 	livenessprobe.Flags().StringVar(&healthzPort, "healthz-port", defaultHealthzPort,

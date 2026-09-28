@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2025-2026. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import (
 	xuanwuV1 "github.com/Huawei/eSDK_K8S_Plugin/v4/client/apis/xuanwu/v1"
 	exporterConfig "github.com/huawei/csm/v2/config/exporter"
 	"github.com/huawei/csm/v2/controller/utils/consts"
-	storageGRPC "github.com/huawei/csm/v2/grpc/lib/go/cmi"
+	"github.com/huawei/csm/v2/provider/cmicore"
 	clientSet "github.com/huawei/csm/v2/server/prometheus-exporter/clientset"
 	"github.com/huawei/csm/v2/utils/log"
 )
@@ -43,10 +43,6 @@ const DefaultVstoreName = "System_vStore"
 // from prometheus request
 type MetricsVstoreData struct {
 	*BaseMetricsData
-}
-
-func init() {
-	RegisterMetricsData("vstore", NewMetricsVstoreData)
 }
 
 // NewMetricsVstoreData creates a new MetricsVstoreData with special MetricsType
@@ -119,11 +115,11 @@ func filterVstoreBackend(backendClaims *xuanwuV1.StorageBackendClaimList,
 
 // buildVstoreOutData build vstore data from sbct list and return final matrix responses
 func buildVstoreOutData(ctx context.Context, backendName, collectType string,
-	backendContents *xuanwuV1.StorageBackendContentList) *storageGRPC.CollectResponse {
-	outVstoreData := &storageGRPC.CollectResponse{
+	backendContents *xuanwuV1.StorageBackendContentList) *cmicore.CollectResponse {
+	outVstoreData := &cmicore.CollectResponse{
 		BackendName: backendName,
 		CollectType: collectType,
-		Details:     []*storageGRPC.CollectDetail{}}
+		Details:     []*cmicore.CollectDetail{}}
 	for _, sbctInfo := range backendContents.Items {
 		if sbctInfo.Status == nil {
 			continue
@@ -141,8 +137,8 @@ func buildVstoreOutData(ctx context.Context, backendName, collectType string,
 
 // fillVstorePoolDetail fill vstore pool detail data into outVstoreData
 func fillVstorePoolDetail(pool xuanwuV1.Pool, sbctInfo xuanwuV1.StorageBackendContent,
-	outVstoreData *storageGRPC.CollectResponse) {
-	singleCollectDetail := &storageGRPC.CollectDetail{Data: make(map[string]string)}
+	outVstoreData *cmicore.CollectResponse) {
+	singleCollectDetail := &cmicore.CollectDetail{Data: make(map[string]string)}
 
 	sbcConfigName := strings.Split(sbctInfo.Spec.ConfigmapMeta, "/")
 	if len(sbcConfigName) != sbConfigMapLen {

@@ -26,7 +26,7 @@ set -e
 workdir=$(cd $(dirname $0); pwd)
 
 # tmp dir is used to build binary files and images
-export TMP_DIR_PATH="${workdir}/eSDK_Enterprise_Storage_CSM_V${VER}_${PLATFORM}_64"
+export TMP_DIR_PATH="${workdir}/eSDK-Storage-Plugins_CSM-${VER}_Linux-${PLATFORM}-64"
 # release dir is used to assemble the release package
 release_dir_path="${workdir}/release"
 
@@ -60,7 +60,7 @@ function build_image() {
 
     # cd to tmp dir to build image
     cd "${TMP_DIR_PATH}"
-    local images=("csm-prometheus-collector" "csm-topo-service" "csm-cmi" "csm-liveness-probe")
+    local images=("csm-prometheus-collector" "csm-topo-service" "csm-liveness-probe")
     # shellcheck disable=SC2068
     for img in ${images[@]}; do
       echo "build the ${img} image"
@@ -103,8 +103,8 @@ chart_version=$(echo ${VER} | sed -e 's/\([0-9]\+\.[0-9]\+\.[0-9]\+\)\./\1-/')
 sed -i "s/{{version}}/${chart_version}/g" helm/huawei-csm/Chart.yaml
 
 # zip the release package and move it to workdir
-zip -rq -o eSDK_Enterprise_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip ./*
-mv eSDK_Enterprise_Storage_CSM_V"${VER}"_"${PLATFORM}"_64.zip "${workdir}"
+zip -rq -o eSDK-Storage-Plugins_CSM-"${VER}"_Linux-"${PLATFORM}"-64.zip ./*
+mv eSDK-Storage-Plugins_CSM-"${VER}"_Linux-"${PLATFORM}"-64.zip "${workdir}"
 
 # cd to workdir to remove tmp files
 cd "${workdir}"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ *  Copyright (c) Huawei Technologies Co., Ltd. 2023-2025. All rights reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -55,40 +55,6 @@ func Test_parseStorageData_GetDataEmpty(t *testing.T) {
 	}
 }
 
-func Test_parseStorageStatus_GetHealthStatus(t *testing.T) {
-	// arrange
-	mockInDataKey := ""
-	mockMetricsName := "health_status"
-	mockInData := map[string]string{
-		"HEALTHSTATUS": "1",
-	}
-
-	// action
-	got := parseStorageStatus(mockInDataKey, mockMetricsName, mockInData)
-
-	// assert
-	if !reflect.DeepEqual(got, "Normal") {
-		t.Errorf("parseStorageStatus() got = %v, want %v", got, "fake_data")
-	}
-}
-
-func Test_parseStorageStatus_GetRunningStatus(t *testing.T) {
-	// arrange
-	mockInDataKey := ""
-	mockMetricsName := "running_status"
-	mockInData := map[string]string{
-		"RUNNINGSTATUS": "1",
-	}
-
-	// action
-	got := parseStorageStatus(mockInDataKey, mockMetricsName, mockInData)
-
-	// assert
-	if !reflect.DeepEqual(got, "Normal") {
-		t.Errorf("parseStorageStatus() got = %v, want %v", got, "fake_data")
-	}
-}
-
 func Test_parseLabelListToLabelValueSlice_GetLabelValueSuccess(t *testing.T) {
 	// arrange
 	mockLabelKeys := []string{"fake_label_key1", "fake_label_key2"}
@@ -128,32 +94,113 @@ func Test_parseStorageSectorsToGB(t *testing.T) {
 
 	// assert
 	if !reflect.DeepEqual(got, "100") {
-		t.Errorf("parseStorageStatus() got = %v, want %v", got, "100")
+		t.Errorf("parseStorageSectorsToGB() got = %v, want %v", got, "100")
 	}
 	if !reflect.DeepEqual(got2, "100.00000047683716") {
-		t.Errorf("parseStorageStatus() got2 = %v, want %v", got2, "100.00000047683716")
+		t.Errorf("parseStorageSectorsToGB() got2 = %v, want %v", got2, "100.00000047683716")
 	}
 }
 
-func Test_parseVstoreCapacityToGB(t *testing.T) {
-	// arrange
-	mockInDataKey := "fake_key"
-	mockInData := map[string]string{
-		"fake_key": "107374182400",
-	}
-	mockInData2 := map[string]string{
-		"fake_key": "107374182401",
+func Test_parseFilesystemCapacityUsage(t *testing.T) {
+	tests := []struct {
+		name   string
+		inData map[string]string
+		want   string
+	}{
+		{
+			name:   "empty inData",
+			inData: nil,
+			want:   "",
+		},
+		{
+			name: "capacity is zero",
+			inData: map[string]string{
+				"CAPACITY":                "0",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "10",
+			},
+			want: "",
+		},
+		{
+			name: "capacity parse error",
+			inData: map[string]string{
+				"CAPACITY":                "not_a_number",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "10",
+			},
+			want: "",
+		},
+		{
+			name: "usedCapacity parse error",
+			inData: map[string]string{
+				"CAPACITY":                "200",
+				"allocatedPoolQuota":      "not_a_number",
+				"SNAPSHOTRESERVECAPACITY": "10",
+			},
+			want: "",
+		},
+		{
+			name: "snapshotReserveCapacity parse error",
+			inData: map[string]string{
+				"CAPACITY":                "200",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "not_a_number",
+			},
+			want: "",
+		},
+		{
+			name: "snapshotReserveCapacity equals capacity - no divide by zero",
+			inData: map[string]string{
+				"CAPACITY":                "100",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "100",
+			},
+			want: "",
+		},
+		{
+			name: "snapshotReserveCapacity greater than capacity",
+			inData: map[string]string{
+				"CAPACITY":                "100",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "200",
+			},
+			want: "",
+		},
+		{
+			name: "normal usage calculation",
+			inData: map[string]string{
+				"CAPACITY":                "200",
+				"allocatedPoolQuota":      "50",
+				"SNAPSHOTRESERVECAPACITY": "0",
+			},
+			want: "25",
+		},
+		{
+			name: "usage with snapshot reserve deducted",
+			inData: map[string]string{
+				"CAPACITY":                "100",
+				"allocatedPoolQuota":      "60",
+				"SNAPSHOTRESERVECAPACITY": "20",
+			},
+			want: "75",
+		},
+		{
+			name: "zero used capacity",
+			inData: map[string]string{
+				"CAPACITY":                "100",
+				"allocatedPoolQuota":      "0",
+				"SNAPSHOTRESERVECAPACITY": "0",
+			},
+			want: "0",
+		},
 	}
 
-	// action
-	got := parseVstoreCapacityToGB(mockInDataKey, "", mockInData)
-	got2 := parseVstoreCapacityToGB(mockInDataKey, "", mockInData2)
-
-	// assert
-	if !reflect.DeepEqual(got, "100") {
-		t.Errorf("parseVstoreCapacityToGB() got = %v, want %v", got, "100")
-	}
-	if !reflect.DeepEqual(got2, "100.00000000093132") {
-		t.Errorf("parseVstoreCapacityToGB() got2 = %v, want %v", got2, "100.00000000093132")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseFilesystemCapacityUsage("", "", tt.inData)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseFilesystemCapacityUsage() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

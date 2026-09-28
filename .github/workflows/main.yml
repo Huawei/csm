@@ -32,5 +32,5 @@ jobs:
         body: TODO New Release.
         draft: true
         files: |
-          eSDK_Enterprise_Storage_CSM_V${{ steps.branch-names.outputs.tag }}_X86_64.zip
-          eSDK_Enterprise_Storage_CSM_V${{ steps.branch-names.outputs.tag }}_ARM_64.zip
+          eSDK-Storage-Plugins_CSM-V${{ steps.branch-names.outputs.tag }}_Linux-X86-64.zip
+          eSDK-Storage-Plugins_CSM-V${{ steps.branch-names.outputs.tag }}_Linux-ARM-64.zip
